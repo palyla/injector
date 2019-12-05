@@ -20,11 +20,8 @@ void timer1_init(void) {
 void timer2_init(void) {
 	OCR2A = 248;
 
-    TCCR2A |= (1 << WGM21);
-    // Set to CTC Mode
 
-    TIMSK2 |= (1 << OCIE2A);
-    //Set interrupt on compare match
+    TIMSK2 |= (1 <<  TOIE2);
 
     TCCR2B |= (1 << CS21);
     // set prescaler to 64 and starts PWM
