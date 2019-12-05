@@ -13,7 +13,7 @@
 #define FUEL_ML_SPENT_US 0.0000032
 
 #define MILLILITERS_IN_MINUTE 191.8L
-#define MILLILITERS_IN_MICROS (MILLILITERS_IN_MINUTE/(60*1000*2))
+#define MILLILITERS_IN_MICROS (MILLILITERS_IN_MINUTE/(60*1000*2L))
 
 #define LITTERS_IN_HOUR ((MILLILITERS_IN_MINUTE*60) / 1000)
 #define LITTERS_IN_HOUR_FROM_MILLILITERS_IN_MICROS(X) ((X*1000*2*60*60)/1000L)
@@ -71,8 +71,8 @@ int main(void) {
 
 	    printf("ddddddddddddddddd\n");
 		spent_ml = timer1_ticks * TIMER1_TICK_US * MILLILITERS_IN_MICROS;
-		printf("%d\n", (int)spent_ml);
-		printf("%d\n", (int)LITTERS_IN_HOUR_FROM_MILLILITERS_IN_MICROS(spent_ml));
+		printf("%Lf\n", 0.333333L);
+		// printf("%d\n", (int)LITTERS_IN_HOUR_FROM_MILLILITERS_IN_MICROS(spent_ml));
 
 		timer1_ticks = 0;
 	    timer2_ticks = 0;
