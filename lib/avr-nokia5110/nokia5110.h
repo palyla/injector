@@ -32,7 +32,8 @@
 #define LCD_DIN PB4
 #define LCD_CLK PB5
 
-#define LCD_CONTRAST 0x40
+// #define LCD_CONTRAST 0x40
+#define LCD_CONTRAST 0x50
 
 /*
  * Must be called once before any other function, initializes display

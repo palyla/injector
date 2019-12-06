@@ -44,15 +44,34 @@ void pin_init(void) {
 void lcd_init(void) {
     nokia_lcd_init();
     nokia_lcd_clear();
-    nokia_lcd_write_string("VOLVO", 2);
+    nokia_lcd_write_string("kwas love!", 1);
+    nokia_lcd_write_string("one love!", 1);
     nokia_lcd_set_cursor(0, 10);
-    nokia_lcd_write_string("fuel consumption", 3);
+    nokia_lcd_set_cursor(0, 20);
     nokia_lcd_render();
 }
+
+void lprintf(int x, int y, const char *fmt, ...) {
+	char buffer[1024];
+    
+    va_list args;
+    va_start(args, fmt);
+
+    nokia_lcd_set_cursor(x, y);
+
+	memset(buffer, 0, 1024);
+    vsprintf(buffer, fmt, args);
+    nokia_lcd_write_string(buffer, 1);
+
+    va_end(args);
+}
+
 
 int main(void) {
 	double elapsed_m = 0; /* The sum of an open injector times */
 	double spent_ml = 0; /* Spent fuel in milliliters */
+	double spent_l = 0;
+	double spent_total_l = 0;
 
 	uart_init();
 	stdout = &uart_output;
@@ -75,11 +94,22 @@ int main(void) {
 
 		elapsed_m = (double)timer1_ticks * TIMER1_TICK_US / (1000.0 * 1000.0 * 60.0);
 		spent_ml = elapsed_m * MILLILITERS_IN_MINUTE;
-		
+		spent_l = LITTERS_IN_HOUR_FROM_MILLILITERS_IN_MINUTE(spent_ml);
+		spent_total_l += spent_l * 0.000278;
+
 		printf("---------------------------------------------\n");
 		printf("MILLILITERS_IN_MINUTE %f \n", MILLILITERS_IN_MINUTE);
 		printf("Elapsed %f minutes\n", elapsed_m);
 		printf("Spent %f mililiters/minute\n", spent_ml);
-		printf("Spent %f litters/hour\n", LITTERS_IN_HOUR_FROM_MILLILITERS_IN_MINUTE(spent_ml));
+		printf("Spent %f litters/hour\n", spent_l);
+
+		nokia_lcd_clear();
+
+	    lprintf(0, 0, "EL %.4f M", elapsed_m);
+	    lprintf(0, 10, "SP %.4f ML/M", spent_ml);
+	    lprintf(0, 20, "SP %.4f L/H", spent_l);
+	    lprintf(0, 30, "T %.4f L", spent_total_l);
+
+	    nokia_lcd_render();
 	}
 }
