@@ -2,7 +2,7 @@ DEVICE     = atmega328p
 CLOCK      = 16000000
 AVRDUDE = avrdude -C /etc/avrdude.conf -c arduino -P /dev/ttyUSB0 -b 57600 -D -p $(DEVICE)
 OBJECTS = uart.o app.o
-COMPILE = avr-gcc -Wall -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE)
+COMPILE = avr-gcc -Wall -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE) -Wl,-u,vfprintf -lprintf_flt -lm
 
 all:	app.hex
 
