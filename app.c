@@ -4,14 +4,20 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <avr-nokia5110/nokia5110.h>
+#include <avr/eeprom.h>
 
 #include "uart.h"
 
 #define TIMER1_TICK_US 64.0
 #define TIMER2_TICKS_EQ_A_SECOND 61
 
-#define MILLILITERS_IN_MINUTE 191.8
-#define LITTERS_IN_HOUR_FROM_MILLILITERS_IN_MINUTE(X) ((X * 60.0) / MILLILITERS_IN_MINUTE)
+// #define MILLILITERS_IN_MINUTE 191.8 // This is the old incorrect value
+#define MILLILITERS_IN_MINUTE 213.9
+#define REGINA_MILLILITERS_IN_MINUTE 176.0
+// #define LITTERS_IN_HOUR_FROM_MILLILITERS_IN_MINUTE(X) ((X * 60.0) / MILLILITERS_IN_MINUTE)
+#define LITTERS_IN_HOUR_FROM_MILLILITERS_IN_MINUTE(X) ((X * 60.0) / 1000)
+
+#define INJECTORS 4
 
 
 /* 1 tick == 64 micros */
@@ -44,9 +50,9 @@ void pin_init(void) {
 void lcd_init(void) {
     nokia_lcd_init();
     nokia_lcd_clear();
-    nokia_lcd_write_string("kwas love!", 1);
-    nokia_lcd_write_string("one love!", 1);
+    nokia_lcd_write_string("Volvo", 1);
     nokia_lcd_set_cursor(0, 10);
+    nokia_lcd_write_string("- one love!", 1);
     nokia_lcd_set_cursor(0, 20);
     nokia_lcd_render();
 }
@@ -73,6 +79,7 @@ int main(void) {
 	double spent_l = 0;
 	double spent_total_l = 0;
 
+
 	uart_init();
 	stdout = &uart_output;
 	stdin  = &uart_input;
@@ -92,9 +99,9 @@ int main(void) {
 	    while (timer2_ticks < TIMER2_TICKS_EQ_A_SECOND)
 	    	;
 
-		elapsed_m = (double)timer1_ticks * TIMER1_TICK_US / (1000.0 * 1000.0 * 60.0);
+		elapsed_m = ((double)timer1_ticks * TIMER1_TICK_US / (1000.0 * 1000.0 * 60.0)) * INJECTORS;
 		spent_ml = elapsed_m * MILLILITERS_IN_MINUTE;
-		spent_l = LITTERS_IN_HOUR_FROM_MILLILITERS_IN_MINUTE(spent_ml);
+		spent_l = LITTERS_IN_HOUR_FROM_MILLILITERS_IN_MINUTE(spent_ml); // ((spent_ml * 60.0) / 1000)
 		spent_total_l += spent_l * 0.000278;
 
 		printf("---------------------------------------------\n");
