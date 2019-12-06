@@ -3,6 +3,7 @@
 #include <avr/interrupt.h>
 #include <stdio.h>
 #include <inttypes.h>
+#include <avr-nokia5110/nokia5110.h>
 
 #include "uart.h"
 
@@ -13,14 +14,13 @@
 #define LITTERS_IN_HOUR_FROM_MILLILITERS_IN_MINUTE(X) ((X * 60.0) / MILLILITERS_IN_MINUTE)
 
 
-// 1 tick == 64 micros
+/* 1 tick == 64 micros */
 static volatile uint64_t timer1_ticks = 0;
-// 90 times overflow == 1 secs
+/* 90 ticks == 1 secs */
 static volatile uint64_t timer2_ticks = 0;
 
 
 ISR(TIMER2_OVF_vect) {
-	// printf("timer2\n");
 	timer2_ticks += 1;
 }
 
@@ -30,7 +30,6 @@ ISR(INT1_vect) {
 	    /* Prescaler 1024 and 16MHZ frequncy [64 micros ...  secs] */
 	    TCCR1B |= (1 << CS12) | (1 << CS10);
 	} else {
-		// printf("%f\n", TCNT1 * TIMER1_TICK_US);
 		timer1_ticks += TCNT1;
 		TCNT1 = 0x0;
 		TCCR1B = 0x0;
@@ -42,15 +41,24 @@ void pin_init(void) {
     EIMSK |= (1 << INT1);
 }
 
-// 3.2 millititers in secound
-int main(void) {
-	double elapsed_m = 0; /* elapsed microsecounds */
-	double spent_ml = 0; /* milliliters in microsecound */
+void lcd_init(void) {
+    nokia_lcd_init();
+    nokia_lcd_clear();
+    nokia_lcd_write_string("VOLVO", 2);
+    nokia_lcd_set_cursor(0, 10);
+    nokia_lcd_write_string("fuel consumption", 3);
+    nokia_lcd_render();
+}
 
+int main(void) {
+	double elapsed_m = 0; /* The sum of an open injector times */
+	double spent_ml = 0; /* Spent fuel in milliliters */
 
 	uart_init();
 	stdout = &uart_output;
 	stdin  = &uart_input;
+
+	lcd_init();
 
 	pin_init();
 

@@ -1,13 +1,16 @@
 DEVICE     = atmega328p
 CLOCK      = 16000000
 AVRDUDE = avrdude -C /etc/avrdude.conf -c arduino -P /dev/ttyUSB0 -b 57600 -D -p $(DEVICE)
-OBJECTS = uart.o app.o
-COMPILE = avr-gcc -Wall -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE) -Wl,-u,vfprintf -lprintf_flt -lm
+
+LIBS_H = -Ilib
+OBJECTS = lib/avr-nokia5110/nokia5110.o uart.o app.o
+COMPILE = avr-gcc -Wall -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE)  -Llib -Wl,-u,vfprintf -lprintf_flt -lm
+
 
 all:	app.hex
 
 .c.o:
-	$(COMPILE) -c $< -o $@
+	$(COMPILE) $(LIBS_H) -c $< -o $@
 
 .S.o:
 	$(COMPILE) -x assembler-with-cpp -c $< -o $@
