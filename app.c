@@ -9,14 +9,13 @@
 
 #include "uart.h"
 
+#define EEPROM_DATA_OFFSET 0x0
+
 #define TIMER1_TICK_US 64.0
 #define TIMER2_TICKS_EQ_A_SECOND 61
 
-// #define MILLILITERS_IN_MINUTE 191.8 // This is the old incorrect value
 #define MILLILITERS_IN_MINUTE 213.9
 #define REGINA_MILLILITERS_IN_MINUTE 176.0
-// #define LITTERS_IN_HOUR_FROM_MILLILITERS_IN_MINUTE(X) ((X * 60.0) / MILLILITERS_IN_MINUTE)
-// #define LITTERS_IN_HOUR_FROM_MILLILITERS_IN_MINUTE(X) ((X * 60.0) / 1000)
 
 #define INJECTORS 4
 #define TICKS_PER_WHEEL_REVOLUTION 8
@@ -41,6 +40,9 @@ static double spent_total_once_l = 0.0;
 static double spent_total_l = 0.0;
 static double path_total_once_km = 0.0;
 static double path_total_km = 0.0;
+
+static double* spent_eeprom_ptr = (double*)EEPROM_DATA_OFFSET;
+static double* path_eeprom_ptr = (double*)(EEPROM_DATA_OFFSET + sizeof(double));
 
 
 ISR(TIMER2_OVF_vect) {
@@ -184,14 +186,30 @@ void lcd_present(void) {
     nokia_lcd_render();
 }
 
+void eeprom_save(void) {
+    if (eeprom_is_ready()) {
+        eeprom_write_float((float*)&spent_eeprom_ptr, spent_total_l);
+        eeprom_write_float((float*)&path_eeprom_ptr, path_total_km);
+    }
+}
+
+void eeprom_load(void) {
+    eeprom_busy_wait();
+    spent_total_l = eeprom_read_float((float*)spent_eeprom_ptr);
+    eeprom_busy_wait();
+    path_total_km = eeprom_read_float((float*)path_eeprom_ptr);
+}
+
 int main(void) {
     init();
     uart_present_conf();
+    eeprom_load();
     sei();
     while (1) {
         reset_ticks();
         wait(1);
         evaluate();
+        eeprom_save();
         uart_present();
         lcd_present();
     }
