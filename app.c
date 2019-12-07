@@ -5,6 +5,7 @@
 #include <inttypes.h>
 #include <avr-nokia5110/nokia5110.h>
 #include <avr/eeprom.h>
+#include <string.h>
 
 #include "uart.h"
 
@@ -15,7 +16,7 @@
 #define MILLILITERS_IN_MINUTE 213.9
 #define REGINA_MILLILITERS_IN_MINUTE 176.0
 // #define LITTERS_IN_HOUR_FROM_MILLILITERS_IN_MINUTE(X) ((X * 60.0) / MILLILITERS_IN_MINUTE)
-#define LITTERS_IN_HOUR_FROM_MILLILITERS_IN_MINUTE(X) ((X * 60.0) / 1000)
+// #define LITTERS_IN_HOUR_FROM_MILLILITERS_IN_MINUTE(X) ((X * 60.0) / 1000)
 
 #define INJECTORS 4
 #define TICKS_PER_WHEEL_REVOLUTION 8
@@ -73,6 +74,12 @@ void wheel_pin_init(void) {
     EIMSK |= (1 << INT0);
 }
 
+void timer2_init(void) {
+    TIMSK2 |= (1 << TOIE2);
+    TIFR2 |= (1 << TOV2);
+    TCCR2B |= (1 << CS22) | (1 << CS21) | (1 << CS20);
+}
+
 void lcd_init(void) {
     nokia_lcd_init();
     nokia_lcd_clear();
@@ -82,7 +89,15 @@ void lcd_init(void) {
     nokia_lcd_set_cursor(0, 20);
     nokia_lcd_render();
 }
- 
+
+void init(void) {
+    uart_init();
+    lcd_init();
+    injector_pin_init();
+    wheel_pin_init();
+    timer2_init();
+}
+
 void lprintf(int x, int y, const char *fmt, ...) {
     char buffer[1024];
     
@@ -130,39 +145,48 @@ void evaluate(void) {
     path_total_km += path_km; /* TODO store in the EEPROM */
 }
 
+void uart_present_conf(void) {
+    printf("*******************************************************\n");
+    printf("*                     SETTINGS                        *\n");
+    printf("*******************************************************\n\n");
+    printf("TIMER1_TICK_US=%f\n", TIMER1_TICK_US);
+    printf("TIMER2_TICKS_EQ_A_SECOND=%d\n", TIMER2_TICKS_EQ_A_SECOND);
+    printf("MILLILITERS_IN_MINUTE=%f\n", MILLILITERS_IN_MINUTE);
+    printf("INJECTORS=%d\n", INJECTORS);
+    printf("TICKS_PER_WHEEL_REVOLUTION=%d\n", TICKS_PER_WHEEL_REVOLUTION);
+    printf("METERS_PER_WHEEL_REVOLUTION=%d\n", METERS_PER_WHEEL_REVOLUTION);
+}
+
 void uart_present(void) {
-    printf("---------------------------------------------\n");
-    printf("MILLILITERS_IN_MINUTE %f \n", MILLILITERS_IN_MINUTE);
-    printf("Elapsed %f minutes\n", elapsed_m);
-    printf("Spent %f mililiters/minute\n", spent_ml);
-    printf("Spent %f litters/hour\n", spent_l_h);
+    uart_putchar((char)0x1B, stdout);
+    printf("-------------------------------------------------------\n");
+    printf("Injector in state open %f minutes\n", elapsed_m);
+    printf("Spent %f ML/H\n", spent_ml_h);
+    printf("Consumption %f L/100KM\n", cons_l_km);
+    printf("Speed %f KM/H\n", speed_km_h);
+    printf(">>>>>>>>>>>>>>>>>>>>>> This trip >>>>>>>>>>>>>>>>>>>>>>\n");
+    printf("Spent %f L\n", spent_total_once_l);
+    printf("Kilometrage %f KM\n", path_total_once_km);
+    printf("<<<<<<<<<<<<<<<<<<<<<<<< TOTAL <<<<<<<<<<<<<<<<<<<<<<<<\n");
+    printf("Spent total %f L\n", spent_total_l);
+    printf("Kilometrage total %f KM\n", path_total_km);
+    printf("-------------------------------------------------------\n");
 }
 
 void lcd_present(void) {
     nokia_lcd_clear();
     
-    lprintf(0, 0, "EL %.4f M", elapsed_m);
-    lprintf(0, 10, "SP %.4f ML/M", spent_ml);
-    lprintf(0, 20, "SP %.4f L/H", spent_l_h);
-    lprintf(0, 30, "T %.4f L", spent_total_l);
+    lprintf(0, 0, "CS %.4f L/KM", cons_l_km);
+    lprintf(0, 10, "S %.1f KM/H", speed_km_h);
+    lprintf(0, 20, "SP %.4f L", spent_total_once_l);
+    lprintf(0, 30, "P %.4f KM", path_total_once_km);
 
     nokia_lcd_render();
 }
 
 int main(void) {
-    uart_init();
-    stdout = &uart_output;
-    stdin  = &uart_input;
-
-    lcd_init();
-
-    injector_pin_init();
-    wheel_pin_init();
-
-    TIMSK2 |= (1 << TOIE2);
-    TIFR2 |= (1 << TOV2);
-    TCCR2B |= (1 << CS22) | (1 << CS21) | (1 << CS20);
-
+    init();
+    uart_present_conf();
     sei();
     while (1) {
         reset_ticks();
