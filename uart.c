@@ -11,7 +11,7 @@
 #include <util/setbaud.h>
 
 
-void uart_putchar(char c, struct __file *stream) {
+void uart_putchar(char c, FILE *stream) {
     if (c == '\n') {
         uart_putchar('\r', stream);
     }
@@ -19,7 +19,7 @@ void uart_putchar(char c, struct __file *stream) {
     UDR0 = c;
 }
 
-char uart_getchar(struct __file *stream) {
+char uart_getchar(FILE *stream) {
     loop_until_bit_is_set(UCSR0A, RXC0);
     return UDR0;
 }
