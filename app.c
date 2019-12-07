@@ -160,7 +160,7 @@ void uart_present_conf(void) {
 }
 
 void uart_present(void) {
-    uart_putchar((char)0x1B, stdout);
+    putchar(0x1B); /* Try to clear reciever terminal */
     printf("-------------------------------------------------------\n");
     printf("Injector in state open %f minutes\n", elapsed_m);
     printf("Spent %f ML/H\n", spent_ml_h);

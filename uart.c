@@ -5,21 +5,24 @@
 #define F_CPU 16000000UL
 #endif
 
+#define BAUD_TOL 4 
+
 #ifndef BAUD
 #define BAUD 115200
 #endif
 #include <util/setbaud.h>
 
 
-void uart_putchar(char c, FILE *stream) {
+static int uart_putchar(char c, FILE *stream) {
     if (c == '\n') {
         uart_putchar('\r', stream);
     }
     loop_until_bit_is_set(UCSR0A, UDRE0);
     UDR0 = c;
+    return 0;
 }
 
-char uart_getchar(FILE *stream) {
+static int uart_getchar(FILE *stream) {
     loop_until_bit_is_set(UCSR0A, RXC0);
     return UDR0;
 }
