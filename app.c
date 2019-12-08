@@ -9,6 +9,8 @@
 
 #include "uart.h"
 
+#define FUEL_COST_L 42.5
+
 #define EEPROM_DATA_OFFSET 0x0
 
 #define TIMER1_TICK_US 64.0
@@ -37,6 +39,7 @@ static double path_km = 0.0;
 static double cons_l_km = 0.0;
 static double speed_km_h = 0.0;
 static double spent_total_once_l = 0.0;
+static double spent_total_once_rub = 0.0;
 static double spent_total_l = 0.0;
 static double path_total_once_km = 0.0;
 static double path_total_km = 0.0;
@@ -101,14 +104,14 @@ void init(void) {
 }
 
 void lprintf(int x, int y, const char *fmt, ...) {
-    char buffer[1024];
+    char buffer[512];
     
     va_list args;
     va_start(args, fmt);
 
     nokia_lcd_set_cursor(x, y);
 
-    memset(buffer, 0, 1024);
+    memset(buffer, 0, 512);
     vsprintf(buffer, fmt, args);
     nokia_lcd_write_string(buffer, 1);
 
@@ -133,7 +136,8 @@ void evaluate(void) {
     elapsed_m = ((double)timer1_ticks * TIMER1_TICK_US / (1000.0 * 1000.0 * 60.0)) * INJECTORS;
     spent_ml = elapsed_m * VOLUMETRIC_FLOW_MILLILITERS_IN_MINUTE; // Spent until 1 second 
     spent_l = spent_ml / 1000.0;
-    spent_l_h = (elapsed_m * 60) * VOLUMETRIC_FLOW_MILLILITERS_IN_MINUTE;
+    // spent_l_h = (elapsed_m * 60) * VOLUMETRIC_FLOW_MILLILITERS_IN_MINUTE;
+    spent_l_h = spent_ml * 3.6;
 
     if (wheel_ticks > 0) {
         path_m = (wheel_ticks / TICKS_PER_WHEEL_REVOLUTION) * METERS_PER_WHEEL_REVOLUTION;
@@ -145,6 +149,7 @@ void evaluate(void) {
         cons_l_km = 0;
         speed_km_h = 0;
     }
+    spent_total_once_rub = spent_total_once_l * FUEL_COST_L;
 
     spent_total_once_l += spent_l;
     spent_total_l += spent_l; /* TODO store in the EEPROM */
@@ -165,29 +170,34 @@ void uart_present_conf(void) {
 }
 
 void uart_present(void) {
-    printf("\033[2J");; /* Try to clear reciever terminal */
+    // printf("\033[2J");; /* Try to clear reciever terminal */
     printf("-------------------------------------------------------\n");
     printf("Injector in state open %f minutes\n", elapsed_m);
     printf("Spent %f ML/sec\n", spent_ml);
     printf("Spent %f L/H\n", spent_l_h);
-    // printf("Consumption %f L/100KM\n", cons_l_km);
-    // printf("Speed %f KM/H\n", speed_km_h);
-    // printf(">>>>>>>>>>>>>>>>>>>>>> This trip >>>>>>>>>>>>>>>>>>>>>>\n");
-    // printf("Spent %f L\n", spent_total_once_l);
-    // printf("Kilometrage %f KM\n", path_total_once_km);
-    // printf("<<<<<<<<<<<<<<<<<<<<<<<< TOTAL <<<<<<<<<<<<<<<<<<<<<<<<\n");
-    // printf("Spent total %f L\n", spent_total_l);
-    // printf("Kilometrage total %f KM\n", path_total_km);
-    // printf("-------------------------------------------------------\n");
+    printf("Consumption %f L/100KM\n", cons_l_km);
+    printf("Speed %f KM/H\n", speed_km_h);
+    printf(">>>>>>>>>>>>>>>>>>>>>> This trip >>>>>>>>>>>>>>>>>>>>>>\n");
+    printf("Spent %f L\n", spent_total_once_l);
+    printf("Kilometrage %f KM\n", path_total_once_km);
+    printf("<<<<<<<<<<<<<<<<<<<<<<<< TOTAL <<<<<<<<<<<<<<<<<<<<<<<<\n");
+    printf("Spent total %f L\n", spent_total_l);
+    printf("Kilometrage total %f KM\n", path_total_km);
+    printf("RUB %.2f\n", spent_total_once_rub);
+    printf("-------------------------------------------------------\n");
 }
 
 void lcd_present(void) {
     nokia_lcd_clear();
     
-    lprintf(0, 0, "CS %.4f L/KM", cons_l_km);
-    lprintf(0, 10, "S %.1f KM/H", speed_km_h);
-    lprintf(0, 20, "SP %.4f L", spent_total_once_l);
-    lprintf(0, 30, "P %.4f KM", path_total_once_km);
+    // lprintf(0, 0, "%.4f ML/sec", spent_ml);
+    lprintf(0, 0, "%.1f KM/H", speed_km_h);
+    lprintf(0, 10, "%.4f L/KM", cons_l_km);
+    lprintf(0, 20, "%.4f L/H", spent_l_h);
+    lprintf(0, 30, "T %.4f L", spent_total_once_l);
+    lprintf(0, 40, "RUB %.2f", spent_total_once_rub);
+    // lprintf(0, 40, "TF %.4f L", spent_total_l);
+    // lprintf(0, 30, "P %.4f KM", path_total_once_km);
 
     nokia_lcd_render();
 }
@@ -217,6 +227,6 @@ int main(void) {
         evaluate();
         // eeprom_save();
         uart_present();
-        // lcd_present();
+        lcd_present();
     }
 }
