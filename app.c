@@ -14,8 +14,8 @@
 #define TIMER1_TICK_US 64.0
 #define TIMER2_TICKS_EQ_A_SECOND 61
 
-#define MILLILITERS_IN_MINUTE 213.9
-#define REGINA_MILLILITERS_IN_MINUTE 176.0
+#define VOLUMETRIC_FLOW_MILLILITERS_IN_MINUTE 213.9
+#define REGINA_VOLUMETRIC_FLOW_MILLILITERS_IN_MINUTE 176.0
 
 #define INJECTORS 4
 #define TICKS_PER_WHEEL_REVOLUTION 8
@@ -31,7 +31,7 @@ static volatile uint64_t wheel_ticks = 0;
 static double elapsed_m = 0.0; /* The sum of an open injector times */
 static double spent_ml = 0.0; /* Spent fuel in milliliters */
 static double spent_l = 0.0;
-static double spent_ml_h = 0.0;
+static double spent_l_h = 0.0;
 static double path_m = 0.0;
 static double path_km = 0.0;
 static double cons_l_km = 0.0;
@@ -131,15 +131,20 @@ void wait(int seconds) {
 
 void evaluate(void) {
     elapsed_m = ((double)timer1_ticks * TIMER1_TICK_US / (1000.0 * 1000.0 * 60.0)) * INJECTORS;
-    spent_ml = elapsed_m * MILLILITERS_IN_MINUTE;
-    spent_l = spent_ml / 1000.0;    
-    spent_ml_h = (spent_ml * 60.0) / elapsed_m;
+    spent_ml = elapsed_m * VOLUMETRIC_FLOW_MILLILITERS_IN_MINUTE; // Spent until 1 second 
+    spent_l = spent_ml / 1000.0;
+    spent_l_h = (elapsed_m * 60) * VOLUMETRIC_FLOW_MILLILITERS_IN_MINUTE;
 
-    path_m = (wheel_ticks / TICKS_PER_WHEEL_REVOLUTION) * METERS_PER_WHEEL_REVOLUTION;
-    path_km = path_m / 1000.0;
-    cons_l_km = (spent_l * 1000.0) / path_m; /* per 100 km */
+    if (wheel_ticks > 0) {
+        path_m = (wheel_ticks / TICKS_PER_WHEEL_REVOLUTION) * METERS_PER_WHEEL_REVOLUTION;
+        path_km = path_m / 1000.0;
+        cons_l_km = (spent_l * 1000.0) / path_m; /* per 100 km */ /* TODO Path may be 0! */
 
-    speed_km_h = (path_km / 0.000278);
+        speed_km_h = (path_km / 0.000278);
+    } else {
+        cons_l_km = 0;
+        speed_km_h = 0;
+    }
 
     spent_total_once_l += spent_l;
     spent_total_l += spent_l; /* TODO store in the EEPROM */
@@ -153,26 +158,27 @@ void uart_present_conf(void) {
     printf("*******************************************************\n\n");
     printf("TIMER1_TICK_US=%f\n", TIMER1_TICK_US);
     printf("TIMER2_TICKS_EQ_A_SECOND=%d\n", TIMER2_TICKS_EQ_A_SECOND);
-    printf("MILLILITERS_IN_MINUTE=%f\n", MILLILITERS_IN_MINUTE);
+    printf("VOLUMETRIC_FLOW_MILLILITERS_IN_MINUTE=%f\n", VOLUMETRIC_FLOW_MILLILITERS_IN_MINUTE);
     printf("INJECTORS=%d\n", INJECTORS);
     printf("TICKS_PER_WHEEL_REVOLUTION=%d\n", TICKS_PER_WHEEL_REVOLUTION);
     printf("METERS_PER_WHEEL_REVOLUTION=%d\n", METERS_PER_WHEEL_REVOLUTION);
 }
 
 void uart_present(void) {
-    putchar(0x1B); /* Try to clear reciever terminal */
+    printf("\033[2J");; /* Try to clear reciever terminal */
     printf("-------------------------------------------------------\n");
     printf("Injector in state open %f minutes\n", elapsed_m);
-    printf("Spent %f ML/H\n", spent_ml_h);
-    printf("Consumption %f L/100KM\n", cons_l_km);
-    printf("Speed %f KM/H\n", speed_km_h);
-    printf(">>>>>>>>>>>>>>>>>>>>>> This trip >>>>>>>>>>>>>>>>>>>>>>\n");
-    printf("Spent %f L\n", spent_total_once_l);
-    printf("Kilometrage %f KM\n", path_total_once_km);
-    printf("<<<<<<<<<<<<<<<<<<<<<<<< TOTAL <<<<<<<<<<<<<<<<<<<<<<<<\n");
-    printf("Spent total %f L\n", spent_total_l);
-    printf("Kilometrage total %f KM\n", path_total_km);
-    printf("-------------------------------------------------------\n");
+    printf("Spent %f ML/sec\n", spent_ml);
+    printf("Spent %f L/H\n", spent_l_h);
+    // printf("Consumption %f L/100KM\n", cons_l_km);
+    // printf("Speed %f KM/H\n", speed_km_h);
+    // printf(">>>>>>>>>>>>>>>>>>>>>> This trip >>>>>>>>>>>>>>>>>>>>>>\n");
+    // printf("Spent %f L\n", spent_total_once_l);
+    // printf("Kilometrage %f KM\n", path_total_once_km);
+    // printf("<<<<<<<<<<<<<<<<<<<<<<<< TOTAL <<<<<<<<<<<<<<<<<<<<<<<<\n");
+    // printf("Spent total %f L\n", spent_total_l);
+    // printf("Kilometrage total %f KM\n", path_total_km);
+    // printf("-------------------------------------------------------\n");
 }
 
 void lcd_present(void) {
@@ -203,14 +209,14 @@ void eeprom_load(void) {
 int main(void) {
     init();
     uart_present_conf();
-    eeprom_load();
+    // eeprom_load();
     sei();
     while (1) {
         reset_ticks();
         wait(1);
         evaluate();
-        eeprom_save();
+        // eeprom_save();
         uart_present();
-        lcd_present();
+        // lcd_present();
     }
 }
