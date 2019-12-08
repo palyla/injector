@@ -1,0 +1,24 @@
+#define PCF8574_2004_LCD
+
+#ifdef NOKIA_5110_LCD
+    #include "nokia5110_lcd.h"
+#endif
+#ifdef PCF8574_2004_LCD
+    #include "pcf8574_2004_lcd.h"
+#endif
+
+
+#define FUEL_COST_L 42.5
+
+#define EEPROM_DATA_OFFSET 0x0
+#define LPRINTF_BUFFER_SIZE 512
+
+#define TIMER1_TICK_US 64.0
+#define TIMER2_TICKS_EQ_A_SECOND 61
+
+#define VOLUMETRIC_FLOW_MILLILITERS_IN_MINUTE 213.9
+// #define VOLUMETRIC_FLOW_MILLILITERS_IN_MINUTE 176.0 /* volvo 740 regina */
+
+#define INJECTORS 4
+#define TICKS_PER_WHEEL_REVOLUTION 12
+#define METERS_PER_WHEEL_REVOLUTION 2

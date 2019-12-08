@@ -3,26 +3,11 @@
 #include <avr/interrupt.h>
 #include <stdio.h>
 #include <inttypes.h>
-#include <avr-nokia5110/nokia5110.h>
 #include <avr/eeprom.h>
 #include <string.h>
 
 #include "uart.h"
-
-
-#define FUEL_COST_L 42.5
-
-#define EEPROM_DATA_OFFSET 0x0
-
-#define TIMER1_TICK_US 64.0
-#define TIMER2_TICKS_EQ_A_SECOND 61
-
-#define VOLUMETRIC_FLOW_MILLILITERS_IN_MINUTE 213.9
-// #define VOLUMETRIC_FLOW_MILLILITERS_IN_MINUTE 176.0 /* volvo 740 regina */
-
-#define INJECTORS 4
-#define TICKS_PER_WHEEL_REVOLUTION 12
-#define METERS_PER_WHEEL_REVOLUTION 2
+#include "config.h"
 
 /* 1 tick == 64 micros */
 static volatile uint64_t timer1_ticks = 0;
@@ -30,6 +15,7 @@ static volatile uint64_t timer1_ticks = 0;
 static volatile uint64_t timer2_ticks = 0;
 static volatile uint64_t wheel_ticks = 0;
 
+static char buffer[LPRINTF_BUFFER_SIZE];
 
 static double elapsed_m = 0.0; /* The sum of an open injector times */
 static double spent_ml = 0.0; /* Spent fuel in milliliters */
@@ -86,37 +72,12 @@ void timer2_init(void) {
     TCCR2B |= (1 << CS22) | (1 << CS21) | (1 << CS20);
 }
 
-void lcd_init(void) {
-    nokia_lcd_init();
-    nokia_lcd_clear();
-    nokia_lcd_write_string("Volvo", 1);
-    nokia_lcd_set_cursor(0, 10);
-    nokia_lcd_write_string("- one love!", 1);
-    nokia_lcd_set_cursor(0, 20);
-    nokia_lcd_render();
-}
-
 void init(void) {
     uart_init();
     lcd_init();
     injector_pin_init();
     wheel_pin_init();
     timer2_init();
-}
-
-void lprintf(int x, int y, const char *fmt, ...) {
-    char buffer[512];
-    
-    va_list args;
-    va_start(args, fmt);
-
-    nokia_lcd_set_cursor(x, y);
-
-    memset(buffer, 0, 512);
-    vsprintf(buffer, fmt, args);
-    nokia_lcd_write_string(buffer, 1);
-
-    va_end(args);
 }
 
 void reset_ticks(void) {
@@ -186,8 +147,22 @@ void uart_present(void) {
     printf("-------------------------------------------------------\n");
 }
 
+void lprintf(int x, int y, const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+
+    lcd_set_cursor(x, y);
+
+    memset(buffer, 0, LPRINTF_BUFFER_SIZE);
+    vsprintf(buffer, fmt, args);
+
+    lcd_write_string(buffer);
+
+    va_end(args);
+}
+
 void lcd_present(void) {
-    nokia_lcd_clear();
+    lcd_clear();
     
     lprintf(0, 0, "%.1f KM/H", speed_km_h);
     lprintf(0, 10, "%.4f L/KM", cons_l_km);
@@ -197,7 +172,7 @@ void lcd_present(void) {
     // lprintf(0, 40, "TF %.4f L", spent_total_l);
     // lprintf(0, 30, "P %.4f KM", path_total_once_km);
 
-    nokia_lcd_render();
+    lcd_render();
 }
 
 void eeprom_save(void) {
