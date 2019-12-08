@@ -9,6 +9,7 @@
 
 #include "uart.h"
 
+
 #define FUEL_COST_L 42.5
 
 #define EEPROM_DATA_OFFSET 0x0
@@ -17,10 +18,10 @@
 #define TIMER2_TICKS_EQ_A_SECOND 61
 
 #define VOLUMETRIC_FLOW_MILLILITERS_IN_MINUTE 213.9
-#define REGINA_VOLUMETRIC_FLOW_MILLILITERS_IN_MINUTE 176.0
+// #define VOLUMETRIC_FLOW_MILLILITERS_IN_MINUTE 176.0 /* volvo 740 regina */
 
 #define INJECTORS 4
-#define TICKS_PER_WHEEL_REVOLUTION 8
+#define TICKS_PER_WHEEL_REVOLUTION 12
 #define METERS_PER_WHEEL_REVOLUTION 2
 
 /* 1 tick == 64 micros */
@@ -136,7 +137,6 @@ void evaluate(void) {
     elapsed_m = ((double)timer1_ticks * TIMER1_TICK_US / (1000.0 * 1000.0 * 60.0)) * INJECTORS;
     spent_ml = elapsed_m * VOLUMETRIC_FLOW_MILLILITERS_IN_MINUTE; // Spent until 1 second 
     spent_l = spent_ml / 1000.0;
-    // spent_l_h = (elapsed_m * 60) * VOLUMETRIC_FLOW_MILLILITERS_IN_MINUTE;
     spent_l_h = spent_ml * 3.6;
 
     if (wheel_ticks > 0) {
@@ -170,7 +170,6 @@ void uart_present_conf(void) {
 }
 
 void uart_present(void) {
-    // printf("\033[2J");; /* Try to clear reciever terminal */
     printf("-------------------------------------------------------\n");
     printf("Injector in state open %f minutes\n", elapsed_m);
     printf("Spent %f ML/sec\n", spent_ml);
@@ -190,7 +189,6 @@ void uart_present(void) {
 void lcd_present(void) {
     nokia_lcd_clear();
     
-    // lprintf(0, 0, "%.4f ML/sec", spent_ml);
     lprintf(0, 0, "%.1f KM/H", speed_km_h);
     lprintf(0, 10, "%.4f L/KM", cons_l_km);
     lprintf(0, 20, "%.4f L/H", spent_l_h);
