@@ -100,7 +100,7 @@ void evaluate(void) {
     spent_l = spent_ml / 1000.0;
     spent_l_h = spent_ml * 3.6;
 
-    if (wheel_ticks > 0) {
+    if (wheel_ticks > TICKS_PER_WHEEL_REVOLUTION) {
         path_m = (wheel_ticks / TICKS_PER_WHEEL_REVOLUTION) * METERS_PER_WHEEL_REVOLUTION;
         path_km = path_m / 1000.0;
         cons_l_km = (spent_l * 1000.0) / path_m; /* per 100 km */ /* TODO Path may be 0! */
