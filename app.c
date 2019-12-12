@@ -110,7 +110,7 @@ void evaluate(void) {
         cons_l_km = 0;
         speed_km_h = 0;
     }
-    spent_total_once_rub = spent_total_once_l * FUEL_COST_L;
+    spent_total_once_rub = spent_total_once_l * FUEL_COST_RUB_L;
 
     spent_total_once_l += spent_l;
     spent_total_l += spent_l; /* TODO store in the EEPROM */

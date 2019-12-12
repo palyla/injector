@@ -7,7 +7,7 @@
     #include "pcf8574_2004_lcd.h"
 #endif
 
-#define FUEL_COST_L 42.50
+#define FUEL_COST_RUB_L 42.50
 
 #define EEPROM_DATA_OFFSET 0x0
 #define LPRINTF_BUFFER_SIZE 512
