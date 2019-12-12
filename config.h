@@ -1,4 +1,4 @@
-#define PCF8574_2004_LCD
+#define NOKIA_5110_LCD
 
 #ifdef NOKIA_5110_LCD
     #include "nokia5110_lcd.h"
@@ -7,8 +7,7 @@
     #include "pcf8574_2004_lcd.h"
 #endif
 
-
-#define FUEL_COST_L 42.5
+#define FUEL_COST_L 42.50
 
 #define EEPROM_DATA_OFFSET 0x0
 #define LPRINTF_BUFFER_SIZE 512

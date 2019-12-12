@@ -164,7 +164,8 @@ void lprintf(int x, int y, const char *fmt, ...) {
 void lcd_present(void) {
     lcd_clear();
     
-    lprintf(0, 0, "%.1f KM/H", speed_km_h);
+    // lprintf(0, 0, "%.1f KM/H", speed_km_h);
+    lprintf(0, 0, "%.4f KM", path_total_once_km);
     lprintf(0, 10, "%.4f L/KM", cons_l_km);
     lprintf(0, 20, "%.4f L/H", spent_l_h);
     lprintf(0, 30, "T %.4f L", spent_total_once_l);
