@@ -11,7 +11,7 @@
 
 /* 1 tick == 64 micros */
 static volatile uint64_t timer1_ticks = 0;
-/* 90 ticks == 1 secs */
+/* 61 ticks == 1 secs */
 static volatile uint64_t timer2_ticks = 0;
 static volatile uint64_t wheel_ticks = 0;
 
@@ -47,7 +47,7 @@ ISR(INT0_vect) {
 
 ISR(INT1_vect) {
     if (PIND & (1 << PD3)) {
-        /* Prescaler 1024 and 16MHZ frequncy [64 micros ...  secs] */
+        /* Prescaler 1024 and 16MHZ frequncy [64 micros ... 4.19424 secs] */
         TCCR1B |= (1 << CS12) | (1 << CS10);
     } else {
         timer1_ticks += TCNT1;
@@ -103,7 +103,7 @@ void evaluate(void) {
     if (wheel_ticks > TICKS_PER_WHEEL_REVOLUTION) {
         path_m = (wheel_ticks / TICKS_PER_WHEEL_REVOLUTION) * METERS_PER_WHEEL_REVOLUTION;
         path_km = path_m / 1000.0;
-        cons_l_km = (spent_l * 1000.0) / path_m; /* per 100 km */ /* TODO Path may be 0! */
+        cons_l_km = (spent_l * 1000.0) / path_m; /* per 100 km */
 
         speed_km_h = (path_km / 0.000278);
     } else {
