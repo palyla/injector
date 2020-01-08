@@ -12,6 +12,10 @@
 #include "uart.h"
 #include "config.h"
 
+#ifdef NOKIA_5110_LCD
+    #include "nokia5110_lcd.h"
+#endif
+
 
 typedef struct {
     float path_km;   /* Way over current trip [Kilometers] */
@@ -85,7 +89,7 @@ static void timer2_init(void) {
     TCCR2B |= (1 << CS22) | (1 << CS21) | (1 << CS20);
 }
 
-static void init(void) {
+static inline void init(void) {
     uart_init();
     lcd_init();
     injector_pin_init();
@@ -145,6 +149,7 @@ static void evaluate(void) {
     total.fuel_rub += fuel_rub;
 }
 
+#if _USING_UART_PRESENT_CONFIG
 static void uart_present_conf(void) {
     printf("*******************************************************\n");
     printf("*                     SETTINGS                        *\n");
@@ -156,7 +161,9 @@ static void uart_present_conf(void) {
     printf("TICKS_PER_WHEEL_REVOLUTION=%d\n", TICKS_PER_WHEEL_REVOLUTION);
     printf("METERS_PER_WHEEL_REVOLUTION=%d\n", METERS_PER_WHEEL_REVOLUTION);
 }
+#endif
 
+#if _USING_UART_PRESENT
 static void uart_present(void) {
     printf("-------------------------------------------------------\n");
     printf("FUEL %f L/H\n", forecast.fuel_l_h);
@@ -171,6 +178,7 @@ static void uart_present(void) {
     printf("RUB %.2f\n", total.fuel_rub);
     printf("-------------------------------------------------------\n");
 }
+#endif
 
 static void lprintf(int x, int y, const char *fmt, ...) {
     va_list args;
@@ -198,6 +206,7 @@ static void lcd_present(void) {
     lcd_render();
 }
 
+#if _USING_EEPROM
 static void eeprom_try_save(void) {
     if (!eeprom_is_ready())
         return ;
@@ -209,18 +218,33 @@ static void eeprom_load(void) {
     eeprom_busy_wait();
     eeprom_read_block((void *)&total, (const void *)EEPROM_DATA_OFFSET, sizeof(params_t));
 }
+#endif
 
 int main(void) {
     init();
+
+    #if _USING_UART_PRESENT_CONFIG
     uart_present_conf();
+    #endif
+
+    #if _USING_USING_EEPROM
     eeprom_load();
+    #endif
+    
     sei();
     while (1) {
         reset_ticks();
         wait(1);
         evaluate();
+
+        #if _USING_EEPROM
         eeprom_try_save();
+        #endif
+
+        #if _USING_UART_PRESENT
         uart_present();
+        #endif
+
         lcd_present();
     }
 }

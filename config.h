@@ -1,18 +1,11 @@
 #define NOKIA_5110_LCD
 
-#ifdef NOKIA_5110_LCD
-    #include "nokia5110_lcd.h"
-#endif
-
 #define FUEL_COST_RUB_L 42.50
 
 #define EEPROM_DATA_OFFSET  0x0
-// #define EEPROM_TOTAL_PATH_OFFSET      	((float*)EEPROM_DATA_OFFSET)
-// #define EEPROM_TOTAL_SPENT_L_OFFSET   	((float*)(EEPROM_DATA_OFFSET + (sizeof(float) * 2)))
-// #define EEPROM_TOTAL_SPENT_RUB_OFFSET   ((float*)(EEPROM_DATA_OFFSET + (sizeof(float) * 3)))
 
-#define LPRINTF_BUFFER_SIZE 512
-// #define LPRINTF_BUFFER_SIZE 256
+// #define LPRINTF_BUFFER_SIZE 512
+#define LPRINTF_BUFFER_SIZE 128
 
 #define TIMER1_TICK_US 64.0
 #define TIMER2_TICKS_EQ_A_SECOND 61
@@ -23,3 +16,9 @@
 #define INJECTORS 4
 #define TICKS_PER_WHEEL_REVOLUTION 12
 #define METERS_PER_WHEEL_REVOLUTION 2
+
+#define _USING_UART_PRESENT_CONFIG 0
+#define _USING_UART_PRESENT 1
+#define _USING_EEPROM 1
+
+
