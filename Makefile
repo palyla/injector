@@ -3,7 +3,7 @@ CLOCK      = 16000000
 AVRDUDE = avrdude -C /etc/avrdude.conf -c arduino -P /dev/ttyUSB0 -b 57600 -D -p $(DEVICE)
 
 LIBS_H = -Ilib
-OBJECTS = lib/micro-ecc/uECC.o nokia5110_lcd.o lib/avr-nokia5110/nokia5110.o uart.o app.o
+OBJECTS = lib/DL_Hamming/DL_Hamming.o lib/DL_Hamming/DL_HammingCalculateParitySmall.o nokia5110_lcd.o lib/avr-nokia5110/nokia5110.o uart.o app.o
 COMPILE = avr-gcc -Wall -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE)  -Llib -Wl,-u,vfprintf -lprintf_flt -lm
 
 

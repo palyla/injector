@@ -6,8 +6,7 @@
 #include <avr/eeprom.h>
 #include <string.h>
 
-#include <micro-ecc/uECC.h>
-#define uECC_PLATFORM uECC_avr
+#include <DL_Hamming/DL_Hamming.h>
 
 #include "uart.h"
 #include "config.h"
@@ -50,6 +49,7 @@ static params_t trip;
 static forecast_t forecast;
 
 static char buffer[LPRINTF_BUFFER_SIZE];
+static uint64_t ecc_corrections = 0;
 
 
 ISR(TIMER2_OVF_vect) {
@@ -207,30 +207,74 @@ static void lcd_present(void) {
 }
 
 #if _USING_EEPROM
-static void eeprom_try_save(void) {
-    if (!eeprom_is_ready())
-        return ;
 
-    eeprom_write_block((const void *)&total, (void *)EEPROM_DATA_OFFSET, sizeof(params_t));
+static void ecc_error_handler(void) {
+    while(1)
+        printf("ECC failed, corections=%lld\n", ecc_corrections);
 }
 
-static void eeprom_load(void) {
+static size_t eeprom_try_save(uint8_t* src, uint8_t* dst, size_t sz) {
+    size_t new_sz = sz;
+    uint8_t parity = 0;
+    uint8_t first = 0;
+    uint8_t second = 0;
+
+    if(!eeprom_is_ready())
+        return 0;
+
+    for(register int i = 0; i < sz; i += 2) {
+        first = *src++;
+        second = *src++;
+        parity = (uint8_t)DL_HammingCalculateParity2416(first, second);
+        eeprom_write_byte(dst++, first);
+        eeprom_write_byte(dst++, second);
+        eeprom_write_byte(dst++, parity);
+        new_sz++;
+    }
+    return new_sz;
+    // eeprom_write_block((const void *)&total, (void *)EEPROM_DATA_OFFSET, sizeof(params_t));
+}
+
+static void eeprom_load(uint8_t* src, uint8_t* dst, size_t sz) {
+    uint8_t parity = 0;
+    uint8_t first = 0;
+    uint8_t second = 0;
+    uint8_t status = 0;
+
     eeprom_busy_wait();
-    eeprom_read_block((void *)&total, (const void *)EEPROM_DATA_OFFSET, sizeof(params_t));
+    //eeprom_read_block((void *)&total, (const void *)EEPROM_DATA_OFFSET, sizeof(params_t));
+
+    for(register int i = 0; i < sz; i += 3) {
+        first = eeprom_read_byte(src++);
+        second = eeprom_read_byte(src++);
+        parity = eeprom_read_byte(src++);
+        status = (uint8_t)DL_HammingCorrect2416((byte*)&first, (byte*)&second, (byte)parity);
+        switch(status) {
+            case ECC_OK: continue; break;
+            case ECC_TWO_CORRECTIONS: ecc_corrections++;
+            case ECC_ONE_CORRECTION: ecc_corrections++; break;
+            case ECC_ERROR: ecc_error_handler(); break;
+        }
+        *dst++ = first;
+        *dst++ = second;
+    }
 }
+
 #endif
 
 int main(void) {
+    size_t saved_sz = (sizeof(params_t)/2) + sizeof(params_t);
+
     init();
 
     #if _USING_UART_PRESENT_CONFIG
     uart_present_conf();
     #endif
 
-    #if _USING_USING_EEPROM
-    eeprom_load();
+    #if _USING_EEPROM
+    eeprom_load((uint8_t*)EEPROM_DATA_OFFSET, (uint8_t*)&total, saved_sz);
     #endif
-    
+
     sei();
     while (1) {
         reset_ticks();
@@ -238,7 +282,7 @@ int main(void) {
         evaluate();
 
         #if _USING_EEPROM
-        eeprom_try_save();
+        eeprom_try_save((uint8_t*)&total, (uint8_t*)EEPROM_DATA_OFFSET, sizeof(params_t));
         #endif
 
         #if _USING_UART_PRESENT
