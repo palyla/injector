@@ -14,23 +14,16 @@
 
 
 #typedef struct {
-    float path_km;  /* Total path traveled [Kilometers] */
-    float fuel_l;   /* Total fuel spent [Liters] */
-    float fuel_rub; /* Total money spent for fuel [Rubles] */
-} total_t;
-
-#typedef struct {
     float path_km;   /* Way over current trip [Kilometers] */
     float fuel_l;    /* Fuel spent over current trip [Liters] */
     float fuel_rub;  /* Money spent for fuel over current trip [Rubles] */
-    float elapsed_m; /* The sum of durations while an injector in open state [Minutes] */
-} trip_t;  
+} params_t;  
 
 #typedef struct {
     float speed_km_h; /* Forecast speed [Kilometers\Hour] */
     float fuel_l_h;   /* Forecast fuel consumption [Liter\Hour] */
-    float fuel_l_km;  /* Forecast fuel consumption [Liter\100 Km] */
     float fuel_rub_h;  /* Forecast fuel consumption [Rubles\Hour] */
+    float fuel_l_km;  /* Forecast fuel consumption [Liter\100 Km] */
 } forecast_t;
 
 #if 0
@@ -48,8 +41,8 @@ static volatile uint64_t timer1_ticks = 0;
 static volatile uint64_t timer2_ticks = 0;
 static volatile uint64_t wheel_ticks = 0;
 
-static total_t total;
-static trip_t trip;
+static params_t total;
+static params_t trip;
 static forecast_t forecast;
 
 static char buffer[LPRINTF_BUFFER_SIZE];
@@ -130,28 +123,41 @@ static void wait(int seconds) {
 }
 
 static void evaluate(void) {
+    float spent_ml = 0.0;
+    float path_m = 0.0;
+    float path_km = 0.0;
+    float fuel_l = 0.0;
+    float fuel_rub = 0.0;
+    float elapsed_m = 0.0; /* The sum of durations while an injector in open state [Minutes] */
+
     elapsed_m = ((float)timer1_ticks * TIMER1_TICK_US / (1000.0 * 1000.0 * 60.0)) * INJECTORS;
-    spent_ml = elapsed_m * VOLUMETRIC_FLOW_MILLILITERS_IN_MINUTE; // Spent until 1 second 
-    spent_l = spent_ml / 1000.0;
-    spent_l_h = spent_ml * 3.6;
+    spent_ml = (trip.elapsed_m * VOLUMETRIC_FLOW_MILLILITERS_IN_MINUTE);
+
+    fuel_l = spent_ml / 1000.0;
+    fuel_rub = trip.fuel_l * FUEL_COST_RUB_L;
+
+    forecast.fuel_l_h = spent_ml * 3.6;
+    forecast.fuel_rub_h = forecast.fuel_l_h * FUEL_COST_RUB_L;
 
     if (wheel_ticks > TICKS_PER_WHEEL_REVOLUTION) {
-        path_m = (wheel_ticks / TICKS_PER_WHEEL_REVOLUTION) * METERS_PER_WHEEL_REVOLUTION;
+        path_m = ((wheel_ticks / TICKS_PER_WHEEL_REVOLUTION) * METERS_PER_WHEEL_REVOLUTION);
         path_km = path_m / 1000.0;
-        cons_l_km = (spent_l * 1000.0) / path_m; /* per 100 km */
 
-        speed_km_h = path_km * 0.000278;
+        forecast.fuel_l_km = (spent_l * 1000.0) / path_m;
+        forecast.speed_km_h = path_km * 0.000278;
+
     } else {
-        cons_l_km = 0;
-        speed_km_h = 0;
+        forecast.fuel_l_km = 0.0;
+        forecast.speed_km_h = 0.0;
     }
-    spent_total_once_rub = spent_total_once_l * FUEL_COST_RUB_L;
 
-    spent_total_rub += spent_total_once_rub;
-    spent_total_once_l += spent_l;
-    spent_total_l += spent_l; /* TODO store in the EEPROM */
-    path_total_once_km += path_km;
-    path_total_km += path_km; /* TODO store in the EEPROM */
+    trip.path_km += path_km;
+    trip.fuel_l += fuel_l;
+    trip.fuel_rub += fuel_rub;
+    
+    total.path_km += path_km;
+    total.fuel_l += fuel_l;
+    total.fuel_rub += fuel_rub;
 }
 
 static void uart_present_conf(void) {
