@@ -17,22 +17,20 @@ static volatile uint64_t wheel_ticks = 0;
 
 static char buffer[LPRINTF_BUFFER_SIZE];
 
-static double elapsed_m = 0.0; /* The sum of an open injector times */
-static double spent_ml = 0.0; /* Spent fuel in milliliters */
-static double spent_l = 0.0;
-static double spent_l_h = 0.0;
-static double path_m = 0.0;
-static double path_km = 0.0;
-static double cons_l_km = 0.0;
-static double speed_km_h = 0.0;
-static double spent_total_once_l = 0.0;
-static double spent_total_once_rub = 0.0;
-static double spent_total_l = 0.0;
-static double path_total_once_km = 0.0;
-static double path_total_km = 0.0;
-
-static double* spent_eeprom_ptr = (double*)EEPROM_DATA_OFFSET;
-static double* path_eeprom_ptr = (double*)(EEPROM_DATA_OFFSET + sizeof(double));
+static float elapsed_m = 0.0; /* The sum of an open injector times */
+static float spent_ml = 0.0; /* Spent fuel in milliliters */
+static float spent_l = 0.0;
+static float spent_l_h = 0.0;
+static float path_m = 0.0;
+static float path_km = 0.0;
+static float cons_l_km = 0.0;
+static float speed_km_h = 0.0;
+static float spent_total_once_l = 0.0;
+static float spent_total_once_rub = 0.0;
+static float spent_total_rub = 0.0;
+static float spent_total_l = 0.0;
+static float path_total_once_km = 0.0;
+static float path_total_km = 0.0;
 
 
 ISR(TIMER2_OVF_vect) {
@@ -95,7 +93,7 @@ void wait(int seconds) {
 }
 
 void evaluate(void) {
-    elapsed_m = ((double)timer1_ticks * TIMER1_TICK_US / (1000.0 * 1000.0 * 60.0)) * INJECTORS;
+    elapsed_m = ((float)timer1_ticks * TIMER1_TICK_US / (1000.0 * 1000.0 * 60.0)) * INJECTORS;
     spent_ml = elapsed_m * VOLUMETRIC_FLOW_MILLILITERS_IN_MINUTE; // Spent until 1 second 
     spent_l = spent_ml / 1000.0;
     spent_l_h = spent_ml * 3.6;
@@ -105,13 +103,14 @@ void evaluate(void) {
         path_km = path_m / 1000.0;
         cons_l_km = (spent_l * 1000.0) / path_m; /* per 100 km */
 
-        speed_km_h = (path_km / 0.000278);
+        speed_km_h = path_km * 0.000278;
     } else {
         cons_l_km = 0;
         speed_km_h = 0;
     }
     spent_total_once_rub = spent_total_once_l * FUEL_COST_RUB_L;
 
+    spent_total_rub += spent_total_once_rub;
     spent_total_once_l += spent_l;
     spent_total_l += spent_l; /* TODO store in the EEPROM */
     path_total_once_km += path_km;
@@ -176,30 +175,31 @@ void lcd_present(void) {
     lcd_render();
 }
 
-void eeprom_save(void) {
+void eeprom_try_save(void) {
     if (eeprom_is_ready()) {
-        eeprom_write_float((float*)&spent_eeprom_ptr, spent_total_l);
-        eeprom_write_float((float*)&path_eeprom_ptr, path_total_km);
+        eeprom_write_float(EEPROM_TOTAL_PATH_OFFSET, path_total_km);
+        eeprom_write_float(EEPROM_TOTAL_SPENT_L_OFFSET, spent_total_l);
+        eeprom_write_float(EEPROM_TOTAL_SPENT_RUB_OFFSET, spent_total_rub);
     }
 }
 
 void eeprom_load(void) {
     eeprom_busy_wait();
-    spent_total_l = eeprom_read_float((float*)spent_eeprom_ptr);
-    eeprom_busy_wait();
-    path_total_km = eeprom_read_float((float*)path_eeprom_ptr);
+    path_total_km = eeprom_read_float(EEPROM_TOTAL_PATH_OFFSET);
+    spent_total_l = eeprom_read_float(EEPROM_TOTAL_SPENT_L_OFFSET);
+    spent_total_rub = eeprom_read_float(EEPROM_TOTAL_SPENT_RUB_OFFSET);
 }
 
 int main(void) {
     init();
     uart_present_conf();
-    // eeprom_load();
+    eeprom_load();
     sei();
     while (1) {
         reset_ticks();
         wait(1);
         evaluate();
-        // eeprom_save();
+        eeprom_try_save();
         uart_present();
         lcd_present();
     }
