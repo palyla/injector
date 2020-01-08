@@ -215,6 +215,9 @@ static void ecc_error_handler(void) {
 
 static size_t eeprom_try_save(uint8_t* src, uint8_t* dst, size_t sz) {
     size_t new_sz = sz;
+    
+    #if _USING_EEPROM_ECC
+
     uint8_t parity = 0;
     uint8_t first = 0;
     uint8_t second = 0;
@@ -231,19 +234,29 @@ static size_t eeprom_try_save(uint8_t* src, uint8_t* dst, size_t sz) {
         eeprom_write_byte(dst++, parity);
         new_sz++;
     }
+
+    #else /* _USING_EEPROM_ECC */
+    
+    if(!eeprom_is_ready())
+        return 0;
+    eeprom_write_block((const void *)src, (void *)dst, new_sz);
+    
+    #endif /* _USING_EEPROM_ECC */
+
     return new_sz;
-    // eeprom_write_block((const void *)&total, (void *)EEPROM_DATA_OFFSET, sizeof(params_t));
 }
 
 static void eeprom_load(uint8_t* src, uint8_t* dst, size_t sz) {
+    
+    #if _USING_EEPROM_ECC
+
     uint8_t parity = 0;
     uint8_t first = 0;
     uint8_t second = 0;
     uint8_t status = 0;
 
     eeprom_busy_wait();
-    //eeprom_read_block((void *)&total, (const void *)EEPROM_DATA_OFFSET, sizeof(params_t));
-
+    
     for(register int i = 0; i < sz; i += 3) {
         first = eeprom_read_byte(src++);
         second = eeprom_read_byte(src++);
@@ -258,9 +271,16 @@ static void eeprom_load(uint8_t* src, uint8_t* dst, size_t sz) {
         *dst++ = first;
         *dst++ = second;
     }
+    
+    #else /* _USING_EEPROM_ECC */
+    
+    eeprom_busy_wait();
+    eeprom_read_block((void *)dst, (const void *)src, sizeof(params_t));
+
+    #endif /* _USING_EEPROM_ECC */
 }
 
-#endif
+#endif /* _USING_EEPROM */
 
 int main(void) {
     size_t saved_sz = (sizeof(params_t)/2) + sizeof(params_t);
