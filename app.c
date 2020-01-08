@@ -6,8 +6,41 @@
 #include <avr/eeprom.h>
 #include <string.h>
 
+#include <micro-ecc/uECC.h>
+#define uECC_PLATFORM uECC_avr
+
 #include "uart.h"
 #include "config.h"
+
+
+#typedef struct {
+    float path_km;  /* Total path traveled [Kilometers] */
+    float fuel_l;   /* Total fuel spent [Liters] */
+    float fuel_rub; /* Total money spent for fuel [Rubles] */
+} total_t;
+
+#typedef struct {
+    float path_km;   /* Way over current trip [Kilometers] */
+    float fuel_l;    /* Fuel spent over current trip [Liters] */
+    float fuel_rub;  /* Money spent for fuel over current trip [Rubles] */
+    float elapsed_m; /* The sum of durations while an injector in open state [Minutes] */
+} trip_t;  
+
+#typedef struct {
+    float speed_km_h; /* Forecast speed [Kilometers\Hour] */
+    float fuel_l_h;   /* Forecast fuel consumption [Liter\Hour] */
+    float fuel_l_km;  /* Forecast fuel consumption [Liter\100 Km] */
+    float fuel_rub_h;  /* Forecast fuel consumption [Rubles\Hour] */
+} forecast_t;
+
+#if 0
+#typedef struct {
+    float _; /*  */
+    float _; /*  */
+    float _; /*  */
+} stats_t;
+#endif
+
 
 /* 1 tick == 64 micros */
 static volatile uint64_t timer1_ticks = 0;
@@ -15,22 +48,26 @@ static volatile uint64_t timer1_ticks = 0;
 static volatile uint64_t timer2_ticks = 0;
 static volatile uint64_t wheel_ticks = 0;
 
+static total_t total;
+static trip_t trip;
+static forecast_t forecast;
+
 static char buffer[LPRINTF_BUFFER_SIZE];
 
-static float elapsed_m = 0.0; /* The sum of an open injector times */
-static float spent_ml = 0.0; /* Spent fuel in milliliters */
-static float spent_l = 0.0;
-static float spent_l_h = 0.0;
-static float path_m = 0.0;
-static float path_km = 0.0;
-static float cons_l_km = 0.0;
-static float speed_km_h = 0.0;
-static float spent_total_once_l = 0.0;
-static float spent_total_once_rub = 0.0;
-static float spent_total_rub = 0.0;
-static float spent_total_l = 0.0;
-static float path_total_once_km = 0.0;
-static float path_total_km = 0.0;
+// static float elapsed_m = 0.0; /* The sum of an open injector times */
+// static float spent_ml = 0.0; /* Spent fuel in milliliters */
+// static float spent_l = 0.0;
+// static float spent_l_h = 0.0;
+// static float path_m = 0.0;
+// static float path_km = 0.0;
+// static float cons_l_km = 0.0;
+// static float speed_km_h = 0.0;
+// static float spent_total_once_l = 0.0;
+// static float spent_total_once_rub = 0.0;
+// static float spent_total_rub = 0.0;
+// static float spent_total_l = 0.0;
+// static float path_total_once_km = 0.0;
+// static float path_total_km = 0.0;
 
 
 ISR(TIMER2_OVF_vect) {
@@ -54,23 +91,23 @@ ISR(INT1_vect) {
     }
 }
 
-void injector_pin_init(void) {
+static void injector_pin_init(void) {
     EICRA |= (1 << ISC10);
     EIMSK |= (1 << INT1);
 }
 
-void wheel_pin_init(void) {
+static void wheel_pin_init(void) {
     EICRA |= (1 << ISC00) | (1 << ISC01);
     EIMSK |= (1 << INT0);
 }
 
-void timer2_init(void) {
+static void timer2_init(void) {
     TIMSK2 |= (1 << TOIE2);
     TIFR2 |= (1 << TOV2);
     TCCR2B |= (1 << CS22) | (1 << CS21) | (1 << CS20);
 }
 
-void init(void) {
+static void init(void) {
     uart_init();
     lcd_init();
     injector_pin_init();
@@ -78,13 +115,13 @@ void init(void) {
     timer2_init();
 }
 
-void reset_ticks(void) {
+static void reset_ticks(void) {
     timer1_ticks = 0;
     timer2_ticks = 0;
     wheel_ticks = 0;
 }
 
-void wait(int seconds) {
+static void wait(int seconds) {
     timer2_ticks = 0;
     while (seconds--) {
         while (timer2_ticks < TIMER2_TICKS_EQ_A_SECOND)
@@ -92,7 +129,7 @@ void wait(int seconds) {
     }
 }
 
-void evaluate(void) {
+static void evaluate(void) {
     elapsed_m = ((float)timer1_ticks * TIMER1_TICK_US / (1000.0 * 1000.0 * 60.0)) * INJECTORS;
     spent_ml = elapsed_m * VOLUMETRIC_FLOW_MILLILITERS_IN_MINUTE; // Spent until 1 second 
     spent_l = spent_ml / 1000.0;
@@ -117,7 +154,7 @@ void evaluate(void) {
     path_total_km += path_km; /* TODO store in the EEPROM */
 }
 
-void uart_present_conf(void) {
+static void uart_present_conf(void) {
     printf("*******************************************************\n");
     printf("*                     SETTINGS                        *\n");
     printf("*******************************************************\n\n");
@@ -129,7 +166,7 @@ void uart_present_conf(void) {
     printf("METERS_PER_WHEEL_REVOLUTION=%d\n", METERS_PER_WHEEL_REVOLUTION);
 }
 
-void uart_present(void) {
+static void uart_present(void) {
     printf("-------------------------------------------------------\n");
     printf("Injector in state open %f minutes\n", elapsed_m);
     printf("Spent %f ML/sec\n", spent_ml);
@@ -146,7 +183,7 @@ void uart_present(void) {
     printf("-------------------------------------------------------\n");
 }
 
-void lprintf(int x, int y, const char *fmt, ...) {
+static void lprintf(int x, int y, const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
 
@@ -160,7 +197,7 @@ void lprintf(int x, int y, const char *fmt, ...) {
     va_end(args);
 }
 
-void lcd_present(void) {
+static void lcd_present(void) {
     lcd_clear();
     
     // lprintf(0, 0, "%.1f KM/H", speed_km_h);
@@ -175,7 +212,7 @@ void lcd_present(void) {
     lcd_render();
 }
 
-void eeprom_try_save(void) {
+static void eeprom_try_save(void) {
     if (eeprom_is_ready()) {
         eeprom_write_float(EEPROM_TOTAL_PATH_OFFSET, path_total_km);
         eeprom_write_float(EEPROM_TOTAL_SPENT_L_OFFSET, spent_total_l);
@@ -183,7 +220,7 @@ void eeprom_try_save(void) {
     }
 }
 
-void eeprom_load(void) {
+static void eeprom_load(void) {
     eeprom_busy_wait();
     path_total_km = eeprom_read_float(EEPROM_TOTAL_PATH_OFFSET);
     spent_total_l = eeprom_read_float(EEPROM_TOTAL_SPENT_L_OFFSET);

@@ -3,9 +3,6 @@
 #ifdef NOKIA_5110_LCD
     #include "nokia5110_lcd.h"
 #endif
-#ifdef PCF8574_2004_LCD
-    #include "pcf8574_2004_lcd.h"
-#endif
 
 #define FUEL_COST_RUB_L 42.50
 
@@ -15,6 +12,7 @@
 #define EEPROM_TOTAL_SPENT_RUB_OFFSET   ((float*)(EEPROM_DATA_OFFSET + (sizeof(float) * 3)))
 
 #define LPRINTF_BUFFER_SIZE 512
+// #define LPRINTF_BUFFER_SIZE 256
 
 #define TIMER1_TICK_US 64.0
 #define TIMER2_TICKS_EQ_A_SECOND 61
