@@ -174,18 +174,16 @@ static void uart_present_conf(void) {
 
 static void uart_present(void) {
     printf("-------------------------------------------------------\n");
-    printf("Injector in state open %f minutes\n", elapsed_m);
-    printf("Spent %f ML/sec\n", spent_ml);
-    printf("Spent %f L/H\n", spent_l_h);
-    printf("Consumption %f L/100KM\n", cons_l_km);
-    printf("Speed %f KM/H\n", speed_km_h);
-    printf(">>>>>>>>>>>>>>>>>>>>>> This trip >>>>>>>>>>>>>>>>>>>>>>\n");
-    printf("Spent %f L\n", spent_total_once_l);
-    printf("Kilometrage %f KM\n", path_total_once_km);
-    printf("<<<<<<<<<<<<<<<<<<<<<<<< TOTAL <<<<<<<<<<<<<<<<<<<<<<<<\n");
-    printf("Spent total %f L\n", spent_total_l);
-    printf("Kilometrage total %f KM\n", path_total_km);
-    printf("RUB %.2f\n", spent_total_once_rub);
+    printf("FUEL %f L/H\n", forecast.fuel_l_h);
+    printf("FUEL %f L/100KM\n", forecast.fuel_l_km);
+    printf("SPEED %f KM/H\n\n", forecast.speed_km_h);
+
+    printf("FUEL %f L\n", trip.fuel_l);
+    printf("PATH %f KM\n\n", trip.path_km);
+
+    printf("TOTAL FUEL %f L\n", total.fuel_l);
+    printf("TOTAL PATH %f KM\n", total.path_km);
+    printf("RUB %.2f\n", total.fuel_rub);
     printf("-------------------------------------------------------\n");
 }
 
@@ -206,14 +204,11 @@ static void lprintf(int x, int y, const char *fmt, ...) {
 static void lcd_present(void) {
     lcd_clear();
     
-    // lprintf(0, 0, "%.1f KM/H", speed_km_h);
-    lprintf(0, 0, "%.4f KM", path_total_once_km);
-    lprintf(0, 10, "%.4f L/KM", cons_l_km);
-    lprintf(0, 20, "%.4f L/H", spent_l_h);
-    lprintf(0, 30, "T %.4f L", spent_total_once_l);
-    lprintf(0, 40, "RUB %.2f", spent_total_once_rub);
-    // lprintf(0, 40, "TF %.4f L", spent_total_l);
-    // lprintf(0, 30, "P %.4f KM", path_total_once_km);
+    lprintf(0, 0, "%.4f KM", trip.path_km);
+    lprintf(0, 10, "%.4f L/KM", forecast.fuel_l_km);
+    lprintf(0, 20, "%.4f L/H", forecast.fuel_l_h);
+    lprintf(0, 30, "T %.4f L", trip.fuel_l);
+    lprintf(0, 40, "RUB %.2f", trip.fuel_rub);
 
     lcd_render();
 }
