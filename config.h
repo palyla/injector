@@ -7,9 +7,9 @@
 #define FUEL_COST_RUB_L 42.50
 
 #define EEPROM_DATA_OFFSET  0x0
-#define EEPROM_TOTAL_PATH_OFFSET      	((float*)EEPROM_DATA_OFFSET)
-#define EEPROM_TOTAL_SPENT_L_OFFSET   	((float*)(EEPROM_DATA_OFFSET + (sizeof(float) * 2)))
-#define EEPROM_TOTAL_SPENT_RUB_OFFSET   ((float*)(EEPROM_DATA_OFFSET + (sizeof(float) * 3)))
+// #define EEPROM_TOTAL_PATH_OFFSET      	((float*)EEPROM_DATA_OFFSET)
+// #define EEPROM_TOTAL_SPENT_L_OFFSET   	((float*)(EEPROM_DATA_OFFSET + (sizeof(float) * 2)))
+// #define EEPROM_TOTAL_SPENT_RUB_OFFSET   ((float*)(EEPROM_DATA_OFFSET + (sizeof(float) * 3)))
 
 #define LPRINTF_BUFFER_SIZE 512
 // #define LPRINTF_BUFFER_SIZE 256

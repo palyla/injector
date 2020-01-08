@@ -13,13 +13,13 @@
 #include "config.h"
 
 
-#typedef struct {
+typedef struct {
     float path_km;   /* Way over current trip [Kilometers] */
     float fuel_l;    /* Fuel spent over current trip [Liters] */
     float fuel_rub;  /* Money spent for fuel over current trip [Rubles] */
-} params_t;  
+} params_t;
 
-#typedef struct {
+typedef struct {
     float speed_km_h; /* Forecast speed [Kilometers\Hour] */
     float fuel_l_h;   /* Forecast fuel consumption [Liter\Hour] */
     float fuel_rub_h;  /* Forecast fuel consumption [Rubles\Hour] */
@@ -46,21 +46,6 @@ static params_t trip;
 static forecast_t forecast;
 
 static char buffer[LPRINTF_BUFFER_SIZE];
-
-// static float elapsed_m = 0.0; /* The sum of an open injector times */
-// static float spent_ml = 0.0; /* Spent fuel in milliliters */
-// static float spent_l = 0.0;
-// static float spent_l_h = 0.0;
-// static float path_m = 0.0;
-// static float path_km = 0.0;
-// static float cons_l_km = 0.0;
-// static float speed_km_h = 0.0;
-// static float spent_total_once_l = 0.0;
-// static float spent_total_once_rub = 0.0;
-// static float spent_total_rub = 0.0;
-// static float spent_total_l = 0.0;
-// static float path_total_once_km = 0.0;
-// static float path_total_km = 0.0;
 
 
 ISR(TIMER2_OVF_vect) {
@@ -123,27 +108,27 @@ static void wait(int seconds) {
 }
 
 static void evaluate(void) {
-    float spent_ml = 0.0;
     float path_m = 0.0;
     float path_km = 0.0;
+    float fuel_ml = 0.0;
     float fuel_l = 0.0;
     float fuel_rub = 0.0;
     float elapsed_m = 0.0; /* The sum of durations while an injector in open state [Minutes] */
 
     elapsed_m = ((float)timer1_ticks * TIMER1_TICK_US / (1000.0 * 1000.0 * 60.0)) * INJECTORS;
-    spent_ml = (trip.elapsed_m * VOLUMETRIC_FLOW_MILLILITERS_IN_MINUTE);
+    fuel_ml = (elapsed_m * VOLUMETRIC_FLOW_MILLILITERS_IN_MINUTE);
 
-    fuel_l = spent_ml / 1000.0;
-    fuel_rub = trip.fuel_l * FUEL_COST_RUB_L;
+    fuel_l = fuel_ml / 1000.0;
+    fuel_rub = fuel_l * FUEL_COST_RUB_L;
 
-    forecast.fuel_l_h = spent_ml * 3.6;
+    forecast.fuel_l_h = fuel_ml * 3.6;
     forecast.fuel_rub_h = forecast.fuel_l_h * FUEL_COST_RUB_L;
 
     if (wheel_ticks > TICKS_PER_WHEEL_REVOLUTION) {
         path_m = ((wheel_ticks / TICKS_PER_WHEEL_REVOLUTION) * METERS_PER_WHEEL_REVOLUTION);
         path_km = path_m / 1000.0;
 
-        forecast.fuel_l_km = (spent_l * 1000.0) / path_m;
+        forecast.fuel_l_km = (fuel_l * 1000.0) / path_m;
         forecast.speed_km_h = path_km * 0.000278;
 
     } else {
@@ -214,18 +199,15 @@ static void lcd_present(void) {
 }
 
 static void eeprom_try_save(void) {
-    if (eeprom_is_ready()) {
-        eeprom_write_float(EEPROM_TOTAL_PATH_OFFSET, path_total_km);
-        eeprom_write_float(EEPROM_TOTAL_SPENT_L_OFFSET, spent_total_l);
-        eeprom_write_float(EEPROM_TOTAL_SPENT_RUB_OFFSET, spent_total_rub);
-    }
+    if (!eeprom_is_ready())
+        return ;
+
+    eeprom_write_block((const void *)&total, (void *)EEPROM_DATA_OFFSET, sizeof(params_t));
 }
 
 static void eeprom_load(void) {
     eeprom_busy_wait();
-    path_total_km = eeprom_read_float(EEPROM_TOTAL_PATH_OFFSET);
-    spent_total_l = eeprom_read_float(EEPROM_TOTAL_SPENT_L_OFFSET);
-    spent_total_rub = eeprom_read_float(EEPROM_TOTAL_SPENT_RUB_OFFSET);
+    eeprom_read_block((void *)&total, (const void *)EEPROM_DATA_OFFSET, sizeof(params_t));
 }
 
 int main(void) {
