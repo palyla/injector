@@ -17,7 +17,7 @@
 #define FUEL_COST_RUB_L 42.50
 
 /* Features */
-#define NOKIA_5110_LCD
+#define NOKIA_5110_LCD /* NOKIA_5110_LCD, T6963C_LCD */
 #define _USING_UART_PRESENT_CONFIG 1
 #define _USING_UART_PRESENT 1
 #define _USING_EEPROM 1

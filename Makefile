@@ -2,9 +2,18 @@ DEVICE     = atmega328p
 CLOCK      = 16000000
 AVRDUDE = avrdude -C /etc/avrdude.conf -c arduino -P /dev/ttyUSB0 -b 57600 -D -p $(DEVICE)
 
-LIBS_H = -Ilib
-OBJECTS = lib/DL_Hamming/DL_Hamming.o lib/DL_Hamming/DL_HammingCalculateParitySmall.o nokia5110_lcd.o lib/avr-nokia5110/nokia5110.o uart.o app.o
-COMPILE = avr-gcc -Wall -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE)  -Llib -Wl,-u,vfprintf -lprintf_flt -lm
+LIBS_H = -Ilib \
+		 -Ilib/DL_Hamming \
+		 -Ilib/lcd/nokia5110 \
+		 -Ilib/lcd/T6963C
+LIB_OBJECTS = lib/DL_Hamming/DL_Hamming.o \
+		 lib/DL_Hamming/DL_HammingCalculateParitySmall.o \
+		 lib/lcd/nokia5110/nokia5110_lcd.o \
+		 lib/lcd/nokia5110/nokia5110.o \
+		 lib/lcd/T6963C/T6963C.o
+
+OBJECTS = $(LIB_OBJECTS) lcd.o uart.o app.o
+COMPILE = avr-gcc -Wall -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE) -Llib -Wl,-u,vfprintf,-dead_strip -lprintf_flt -lm
 
 
 all:	app.hex

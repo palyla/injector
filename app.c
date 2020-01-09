@@ -8,12 +8,9 @@
 
 #include <DL_Hamming/DL_Hamming.h>
 
-#include "uart.h"
 #include "config.h"
-
-#ifdef NOKIA_5110_LCD
-    #include "nokia5110_lcd.h"
-#endif
+#include "uart.h"
+#include "lcd.h"
 
 
 typedef struct {
@@ -48,7 +45,6 @@ static params_t total;
 static params_t trip;
 static forecast_t forecast;
 
-static char buffer[LPRINTF_BUFFER_SIZE];
 static uint64_t ecc_corrections = 0;
 
 
@@ -184,13 +180,8 @@ static void lprintf(int x, int y, const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
 
-    lcd_set_cursor(x, y);
-
-    memset(buffer, 0, LPRINTF_BUFFER_SIZE);
-    vsprintf(buffer, fmt, args);
-
-    lcd_write_string(buffer);
-
+    lcd_goto(x, y);
+    vfprintf(&lcdout, fmt, args);
     va_end(args);
 }
 
