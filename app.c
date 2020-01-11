@@ -8,31 +8,10 @@
 
 #include <DL_Hamming/DL_Hamming.h>
 
+#include "types.h"
 #include "config.h"
-#include "uart.h"
-#include "lcd.h"
-
-
-typedef struct {
-    float path_km;   /* Way over current trip [Kilometers] */
-    float fuel_l;    /* Fuel spent over current trip [Liters] */
-    float fuel_rub;  /* Money spent for fuel over current trip [Rubles] */
-} params_t;
-
-typedef struct {
-    float speed_km_h; /* Forecast speed [Kilometers\Hour] */
-    float fuel_l_h;   /* Forecast fuel consumption [Liter\Hour] */
-    float fuel_rub_h;  /* Forecast fuel consumption [Rubles\Hour] */
-    float fuel_l_km;  /* Forecast fuel consumption [Liter\100 Km] */
-} forecast_t;
-
-#if 0
-#typedef struct {
-    float _; /*  */
-    float _; /*  */
-    float _; /*  */
-} stats_t;
-#endif
+#include "io/uart.h"
+#include "io/lcd.h"
 
 
 /* 1 tick == 64 micros */
@@ -44,6 +23,7 @@ static volatile uint64_t wheel_ticks = 0;
 static params_t total;
 static params_t trip;
 static forecast_t forecast;
+static stats_t stats;
 
 static uint64_t ecc_corrections = 0;
 
@@ -237,7 +217,7 @@ static size_t eeprom_try_save(uint8_t* src, uint8_t* dst, size_t sz) {
     return new_sz;
 }
 
-static void eeprom_load(uint8_t* src, uint8_t* dst, size_t sz) {
+static void eeprom_load(uint8_t* src, uint8_t* dst, ecc_size_t sz) {
     
     #if _USING_EEPROM_ECC
 
@@ -274,8 +254,6 @@ static void eeprom_load(uint8_t* src, uint8_t* dst, size_t sz) {
 #endif /* _USING_EEPROM */
 
 int main(void) {
-    size_t saved_sz = (sizeof(params_t)/2) + sizeof(params_t);
-
     init();
 
     #if _USING_UART_PRESENT_CONFIG
@@ -283,7 +261,8 @@ int main(void) {
     #endif
 
     #if _USING_EEPROM
-    eeprom_load((uint8_t*)EEPROM_DATA_OFFSET, (uint8_t*)&total, saved_sz);
+    eeprom_load((uint8_t*)EEPROM_TOTAL_OFFSET, (uint8_t*)&total, ecc_sizeof(params_t));
+    eeprom_load((uint8_t*)EEPROM_STATS_OFFSET, (uint8_t*)&stats, ecc_sizeof(stats_t));
     #endif
 
     sei();
@@ -293,7 +272,8 @@ int main(void) {
         evaluate();
 
         #if _USING_EEPROM
-        eeprom_try_save((uint8_t*)&total, (uint8_t*)EEPROM_DATA_OFFSET, sizeof(params_t));
+        eeprom_try_save((uint8_t*)&total, (uint8_t*)EEPROM_TOTAL_OFFSET, sizeof(params_t));
+        eeprom_try_save((uint8_t*)&stats, (uint8_t*)EEPROM_STATS_OFFSET, sizeof(stats_t));
         #endif
 
         #if _USING_UART_PRESENT

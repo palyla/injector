@@ -11,7 +11,7 @@ LIB_OBJECTS = lib/DL_Hamming/DL_Hamming.o \
 		 lib/lcd/nokia5110/nokia5110.o \
 		 lib/lcd/T6963C/T6963C.o
 
-OBJECTS = $(LIB_OBJECTS) lcd.o uart.o app.o
+OBJECTS = $(LIB_OBJECTS) io/lcd.o io/uart.o app.o
 COMPILE = avr-gcc -Wall -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE) -Llib -ffunction-sections -fdata-sections -Wl,--gc-sections,-u,vfprintf,-lprintf_flt -lm
 
 
