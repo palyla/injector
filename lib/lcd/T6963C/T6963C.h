@@ -4,12 +4,12 @@
 #include <util/delay.h>
 
 // data port
-#define GLCD_DATA_PORT   PORTA
-#define GLCD_DATA_PIN    PINA
-#define GLCD_DATA_DDR    DDRA
+#define GLCD_DATA_PORT   PORTC
+#define GLCD_DATA_PIN    PIN0
+#define GLCD_DATA_DDR    DDRC
 // control port
 #define GLCD_CTRL_PORT   PORTC
-#define GLCD_CTRL_PIN    PINC
+#define GLCD_CTRL_PIN    PIN0
 #define GLCD_CTRL_DDR    DDRC
 // control signals
 #define GLCD_WR          PC0
@@ -77,6 +77,8 @@
 
 #define T6963_SCREEN_PEEK                  0xE0
 #define T6963_SCREEN_COPY                  0xE8
+
+typedef char PROGMEM prog_char;
 
 
 void GLCD_InitalizeInterface(void);

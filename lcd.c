@@ -1,6 +1,19 @@
 #include "lcd.h"
 
+FILE lcdout = FDEV_SETUP_STREAM(lcd_putchar, NULL, _FDEV_SETUP_WRITE);
+
 /* static unsigned char fontsize = 1; */
+
+void lcd_setpixel(unsigned char x, unsigned char y) {
+#ifdef T6963C_LCD
+    GLCD_SetPixel(x, y, 1)
+#endif /* T6963C_LCD */
+
+#ifdef NOKIA_5110_LCD
+    nokia_lcd_set_pixel(x, y, 1)
+#endif /* NOKIA_5110_LCD */
+
+}
 
 
 int lcd_putchar(char c, FILE *stream) {
@@ -11,7 +24,7 @@ int lcd_putchar(char c, FILE *stream) {
 #ifdef NOKIA_5110_LCD
 	nokia_lcd_write_char(str, 1);
 #endif /* NOKIA_5110_LCD */
-
+    return c;
 }
 
 

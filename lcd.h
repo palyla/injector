@@ -12,8 +12,7 @@
 	#include <nokia5110.h>
 #endif /* NOKIA_5110_LCD */
 
-
-FILE lcdout = FDEV_SETUP_STREAM(lcd_putchar, NULL, _FDEV_SETUP_WRITE);
+extern FILE lcdout;
 
 void lcd_rectangle(unsigned char x, unsigned char y, unsigned char b, unsigned char a);
 void lcd_circle(unsigned char cx, unsigned char cy, unsigned char radius);
