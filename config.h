@@ -1,13 +1,13 @@
 #ifndef __INJECTOR_CONFIG_H__
 #define __INJECTOR_CONFIG_H__
 
-#include "types"
+#include "types.h"
 
 
 /* Memory options */
 #define EEPROM_DATA_OFFSET   0x0
 #define EEPROM_TOTAL_OFFSET  (EEPROM_DATA_OFFSET)
-#define EEPROM_STATS_OFFSET  (EEPROM_TRIP_OFFSET + ecc_sizeof(params_t))
+#define EEPROM_STATS_OFFSET  (EEPROM_TOTAL_OFFSET + ecc_sizeof(params_t))
 
 /* Timer tick cost */
 #define TIMER1_TICK_US 64.0

@@ -13,6 +13,19 @@
 #include "io/uart.h"
 #include "io/lcd.h"
 
+#define JSON_SIGN_START()               "{"
+#define JSON_SIGN_DELIMETER()           ","
+#define JSON_SIGN_END()                 "}"
+#define JSON_MEMBER(name, value)        #name":"value
+#define JSON_STRING_MEMBER(name, value) #name":"#value
+
+
+static const char* telemetry_msg = JSON_SIGN_START()                                         \
+                                   JSON_MEMBER("fuel_l_h",       "%f") JSON_SIGN_DELIMETER() \
+                                   JSON_MEMBER("engine_rpm",     "%f") JSON_SIGN_DELIMETER() \
+                                   JSON_MEMBER("engine_temp_c",  "%f") JSON_SIGN_DELIMETER() \
+                                   JSON_MEMBER("airflow_temp_c", "%f")                       \
+                                   JSON_SIGN_END();
 
 /* 1 tick == 64 micros */
 static volatile uint64_t timer1_ticks = 0;
