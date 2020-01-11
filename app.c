@@ -34,7 +34,7 @@ static volatile uint64_t timer2_ticks = 0;
 static volatile uint64_t wheel_ticks = 0;
 
 static params_t total;
-static params_t trip;
+static params_t current;
 static forecast_t forecast;
 static stats_t stats;
 
@@ -45,11 +45,9 @@ ISR(TIMER2_OVF_vect) {
     timer2_ticks += 1;
 }
 
-
 ISR(INT0_vect) {
     wheel_ticks += 1;
 }
-
 
 ISR(INT1_vect) {
     if (PIND & (1 << PD3)) {
@@ -129,9 +127,9 @@ static void evaluate(void) {
         forecast.speed_km_h = 0.0;
     }
 
-    trip.path_km += path_km;
-    trip.fuel_l += fuel_l;
-    trip.fuel_rub += fuel_rub;
+    current.path_km += path_km;
+    current.fuel_l += fuel_l;
+    current.fuel_rub += fuel_rub;
     
     total.path_km += path_km;
     total.fuel_l += fuel_l;
@@ -152,23 +150,6 @@ static void uart_present_conf(void) {
 }
 #endif
 
-#if _USING_UART_PRESENT
-static void uart_present(void) {
-    printf("-------------------------------------------------------\n");
-    printf("FUEL %f L/H\n", forecast.fuel_l_h);
-    printf("FUEL %f L/100KM\n", forecast.fuel_l_km);
-    printf("SPEED %f KM/H\n\n", forecast.speed_km_h);
-
-    printf("FUEL %f L\n", trip.fuel_l);
-    printf("PATH %f KM\n\n", trip.path_km);
-
-    printf("TOTAL FUEL %f L\n", total.fuel_l);
-    printf("TOTAL PATH %f KM\n", total.path_km);
-    printf("RUB %.2f\n", total.fuel_rub);
-    printf("-------------------------------------------------------\n");
-}
-#endif
-
 static void lprintf(int x, int y, const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
@@ -178,14 +159,25 @@ static void lprintf(int x, int y, const char *fmt, ...) {
     va_end(args);
 }
 
+static void uart_send_telemetry(void) {
+    printf(telemetry_msg, 
+        forecast.fuel_l_h,
+        forecast.engine_rpm,
+        current.engine_temp_c,
+        current.airflow_temp_c
+    );
+
+    return ;
+}
+
 static void lcd_present(void) {
     lcd_clear();
     
-    lprintf(0, 0, "%.4f KM", trip.path_km);
+    lprintf(0, 0, "%.4f KM", current.path_km);
     lprintf(0, 10, "%.4f L/KM", forecast.fuel_l_km);
     lprintf(0, 20, "%.4f L/H", forecast.fuel_l_h);
-    lprintf(0, 30, "T %.4f L", trip.fuel_l);
-    lprintf(0, 40, "RUB %.2f", trip.fuel_rub);
+    lprintf(0, 30, "T %.4f L", current.fuel_l);
+    lprintf(0, 40, "RUB %.2f", current.fuel_rub);
 
     lcd_render();
 }
@@ -289,10 +281,7 @@ int main(void) {
         eeprom_try_save((uint8_t*)&stats, (uint8_t*)EEPROM_STATS_OFFSET, sizeof(stats_t));
         #endif
 
-        #if _USING_UART_PRESENT
-        uart_present();
-        #endif
-
+        uart_send_telemetry();
         lcd_present();
     }
 }

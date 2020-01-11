@@ -23,7 +23,6 @@
 /* Features */
 #define T6963C_LCD /* NOKIA_5110_LCD, T6963C_LCD */
 #define _USING_UART_PRESENT_CONFIG 1
-#define _USING_UART_PRESENT 1
 #define _USING_EEPROM 1
 #define _USING_EEPROM_ECC 1
 
