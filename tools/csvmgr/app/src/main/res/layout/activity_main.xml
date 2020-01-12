@@ -6,7 +6,6 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-
     <Spinner
         android:id="@+id/ports_sp"
         android:layout_width="0dp"
@@ -33,6 +32,7 @@
         android:layout_width="0dp"
         android:layout_height="46dp"
         android:layout_marginBottom="16dp"
+        android:onClick="goCaptureActivity"
         android:text="Configure Port"
         android:visibility="visible"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -90,6 +90,7 @@
         android:layout_width="0dp"
         android:layout_height="36dp"
         android:layout_marginTop="40dp"
+        android:entries="@array/serial_port_baudrate"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/ports_sp" />
@@ -99,6 +100,7 @@
         android:layout_width="0dp"
         android:layout_height="36dp"
         android:layout_marginTop="40dp"
+        android:entries="@array/serial_port_databits"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"

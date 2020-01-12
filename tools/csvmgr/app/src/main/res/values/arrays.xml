@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="capture_auto_stop_delay">
+                <item>Autostop Delay Secs</item>
+                <item>10</item>
+                <item>60</item>
+                <item>180</item>
+                <item>360</item>
+                <item>1000</item>
+                <item>10000</item>
+    </string-array>
+    <string-array name="serial_port_baudrate">
+                <item>115200</item>
+                <item>9600</item>
+    </string-array>
+    <string-array name="serial_port_stopbits">
+                <item>1</item>
+    </string-array>
+    <string-array name="serial_port_databits">
+                <item>8</item>
+    </string-array>
+</resources>
