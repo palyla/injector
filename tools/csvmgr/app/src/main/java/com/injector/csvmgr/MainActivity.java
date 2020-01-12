@@ -13,8 +13,13 @@ import com.hoho.android.usbserial.driver.UsbSerialDriver;
 import com.hoho.android.usbserial.driver.UsbSerialPort;
 import com.hoho.android.usbserial.driver.UsbSerialProber;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+
+import de.siegmar.fastcsv.writer.CsvAppender;
+import de.siegmar.fastcsv.writer.CsvWriter;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -50,6 +55,31 @@ public class MainActivity extends AppCompatActivity {
 //            port.setParameters(115200, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE);
 //        } catch (IOException e) {
 //            e.printStackTrace();
+//        }
+
+
+
+
+
+
+
+//        File file = new File("foo.csv");
+//        CsvWriter csvWriter = new CsvWriter();
+//
+//        try {
+//            CsvAppender csvAppender = csvWriter.append(file, StandardCharsets.UTF_8);
+//            // header
+//            csvAppender.appendLine("header1", "header2");
+//
+//            // 1st line in one operation
+//            csvAppender.appendLine("value1", "value2");
+//
+//            // 2nd line in split operations
+//            csvAppender.appendField("value3");
+//            csvAppender.appendField("value4");
+//            csvAppender.endLine();
+//        } catch (Exception ex) {
+//
 //        }
 
     }
