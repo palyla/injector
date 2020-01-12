@@ -19,7 +19,6 @@
 #define JSON_SIGN_END()                 "}"
 #define JSON_MEMBER(name, value)        #name":"value
 #define JSON_STRING_MEMBER(name, value) #name":"#value
-#define CRC16_POLYNOMIAL                "0xA001"
 
 
 static const char* telemetry_msg = JSON_SIGN_START()                                         \
@@ -29,12 +28,11 @@ static const char* telemetry_msg = JSON_SIGN_START()                            
                                    JSON_MEMBER("airflow_temp_c", "%f")                       \
                                    JSON_SIGN_END();
 
-static const char* crc16_msg     = JSON_SIGN_START()                                                 \
-                                   JSON_MEMBER("crc16", "%d")                  JSON_SIGN_DELIMETER() \
-                                   JSON_MEMBER("polynomial", CRC16_POLYNOMIAL)                       \
+static const char* crc16_msg     = JSON_SIGN_START()          \
+                                   JSON_MEMBER("crc16", "%d") \
                                    JSON_SIGN_END();
 
-static uint16_t telemetry_msg_crc16 = 0x0;
+static uint16_t telemetry_msg_crc16 = 0xFFFF;
 
 /* 1 tick == 64 micros */
 static volatile uint64_t timer1_ticks = 0;
