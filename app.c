@@ -5,6 +5,7 @@
 #include <inttypes.h>
 #include <avr/eeprom.h>
 #include <string.h>
+#include <util/crc16.h>
 
 #include <DL_Hamming/DL_Hamming.h>
 
@@ -18,6 +19,7 @@
 #define JSON_SIGN_END()                 "}"
 #define JSON_MEMBER(name, value)        #name":"value
 #define JSON_STRING_MEMBER(name, value) #name":"#value
+#define CRC16_POLYNOMIAL                "0xA001"
 
 
 static const char* telemetry_msg = JSON_SIGN_START()                                         \
@@ -26,6 +28,13 @@ static const char* telemetry_msg = JSON_SIGN_START()                            
                                    JSON_MEMBER("engine_temp_c",  "%f") JSON_SIGN_DELIMETER() \
                                    JSON_MEMBER("airflow_temp_c", "%f")                       \
                                    JSON_SIGN_END();
+
+static const char* crc16_msg     = JSON_SIGN_START()                                                 \
+                                   JSON_MEMBER("crc16", "%d")                  JSON_SIGN_DELIMETER() \
+                                   JSON_MEMBER("polynomial", CRC16_POLYNOMIAL)                       \
+                                   JSON_SIGN_END();
+
+static uint16_t telemetry_msg_crc16 = 0x0;
 
 /* 1 tick == 64 micros */
 static volatile uint64_t timer1_ticks = 0;
@@ -166,6 +175,12 @@ static void uart_send_telemetry(void) {
         current.engine_temp_c,
         current.airflow_temp_c
     );
+
+    for(register int i = 0; i < sizeof(telemetry_msg); i++) {
+        telemetry_msg_crc16 = _crc16_update(telemetry_msg_crc16, (uint8_t)telemetry_msg[i]);
+    }
+
+    printf(crc16_msg, telemetry_msg_crc16);
 
     return ;
 }
