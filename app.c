@@ -14,23 +14,23 @@
 #include "io/uart.h"
 #include "io/lcd.h"
 
-#define JSON_SIGN_START()               "{"
-#define JSON_SIGN_DELIMETER()           ","
-#define JSON_SIGN_END()                 "}"
-#define JSON_MEMBER(name, value)        #name":"value
-#define JSON_STRING_MEMBER(name, value) #name":"#value
+#define JS()             "{"
+#define JD()             ","
+#define JE()             "}"
+#define JM(name, value)  #name":"value
+#define JMS(name, value) #name":"#value
 
 
-static const char* telemetry_msg = JSON_SIGN_START()                                         \
-                                   JSON_MEMBER("fuel_l_h",       "%f") JSON_SIGN_DELIMETER() \
-                                   JSON_MEMBER("engine_rpm",     "%f") JSON_SIGN_DELIMETER() \
-                                   JSON_MEMBER("engine_temp_c",  "%f") JSON_SIGN_DELIMETER() \
-                                   JSON_MEMBER("airflow_temp_c", "%f")                       \
-                                   JSON_SIGN_END();
+static const char* telemetry_msg = JS()                            \
+                                   JM("fuel_l_h",       "%f") JD() \
+                                   JM("engine_rpm",     "%f") JD() \
+                                   JM("engine_temp_c",  "%f") JD() \
+                                   JM("airflow_temp_c", "%f")      \
+                                   JE();
 
-static const char* crc16_msg     = JSON_SIGN_START()          \
-                                   JSON_MEMBER("crc16", "%d") \
-                                   JSON_SIGN_END();
+static const char* crc16_msg     = JS()              \
+                                   JM("crc16", "%d") \
+                                   JE();
 
 static uint16_t telemetry_msg_crc16 = 0xFFFF;
 
