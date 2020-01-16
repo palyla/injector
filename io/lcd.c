@@ -51,6 +51,8 @@ void lcd_init(void) {
     nokia_lcd_init();
     nokia_lcd_clear();
     nokia_lcd_render();
+    nokia_lcd_set_cursor(1, 1);
+    nokia_lcd_write_string("test", 4)
 #endif /* NOKIA_5110_LCD */
 }
 

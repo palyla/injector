@@ -4,9 +4,9 @@
 #include <util/delay.h>
 
 // data port
-#define GLCD_DATA_PORT   PORTC
+#define GLCD_DATA_PORT   PORTB
 #define GLCD_DATA_PIN    PIN0
-#define GLCD_DATA_DDR    DDRC
+#define GLCD_DATA_DDR    DDRB
 // control port
 #define GLCD_CTRL_PORT   PORTC
 #define GLCD_CTRL_PIN    PIN0

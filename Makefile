@@ -13,6 +13,7 @@ LIB_OBJECTS = lib/DL_Hamming/DL_Hamming.o \
 
 OBJECTS = $(LIB_OBJECTS) io/lcd.o io/uart.o app.o
 COMPILE = avr-gcc -Wall -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE) -Llib -ffunction-sections -fdata-sections -Wl,--gc-sections,-u,vfprintf,-lprintf_flt -lm
+# COMPILE = avr-gcc -Wall -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE) -Llib -Wl,-u,vfprintf,-lprintf_flt -lm
 
 
 all:	app.hex

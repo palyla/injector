@@ -16,7 +16,7 @@
 
 #define JSON_SIGN_START()               "{"
 #define JSON_SIGN_DELIMETER()           ","
-#define JSON_SIGN_END()                 "}"
+#define JSON_SIGN_END()                 "}\n"
 #define JSON_MEMBER(name, value)        #name":"value
 #define JSON_STRING_MEMBER(name, value) #name":"#value
 
