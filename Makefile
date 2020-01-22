@@ -1,4 +1,5 @@
-DEVICE     = atmega328p
+# DEVICE     = atmega328p
+DEVICE     = atmega2560
 CLOCK      = 16000000
 AVRDUDE = avrdude -C /etc/avrdude.conf -c arduino -P /dev/ttyUSB0 -b 57600 -D -p $(DEVICE)
 

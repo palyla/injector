@@ -14,23 +14,36 @@
 #include "io/uart.h"
 #include "io/lcd.h"
 
-#define JS()             "{"
-#define JD()             ","
-#define JE()             "}"
-#define JM(name, value)  #name":"value
-#define JMS(name, value) #name":"#value
+
+static const char* config_msg = "{"                                                        \
+                                    "\"settings\":"                                        \
+                                    "{"                                                    \
+                                        "\"TIMER1_TICK_US\":"                        "%f," \
+                                        "\"TIMER2_TICKS_EQ_A_SECOND\":"              "%d," \
+                                        "\"VOLUMETRIC_FLOW_MILLILITERS_IN_MINUTE\":" "%f," \
+                                        "\"INJECTORS\":"                             "%d," \
+                                        "\"TICKS_PER_WHEEL_REVOLUTION\":"            "%f," \
+                                        "\"METERS_PER_WHEEL_REVOLUTION\":"           "%f"  \
+                                    "}"                                                    \
+                                "}";
 
 
-static const char* telemetry_msg = JS()                            \
-                                   JM("fuel_l_h",       "%f") JD() \
-                                   JM("engine_rpm",     "%f") JD() \
-                                   JM("engine_temp_c",  "%f") JD() \
-                                   JM("airflow_temp_c", "%f")      \
-                                   JE();
+static const char* telemetry_msg =  "{"                                 \
+                                        "\"data\":"                     \
+                                        "{"                             \
+                                            "\"fuel_l_h\":"       "%f," \
+                                            "\"engine_rpm\":"     "%f," \
+                                            "\"engine_temp_c\":"  "%f," \
+                                            "\"airflow_temp_c\":" "%f"  \
+                                        "}"                             \
+                                    "}";
 
-static const char* crc16_msg     = JS()              \
-                                   JM("crc16", "%d") \
-                                   JE();
+static const char* integrity_msg =  "{"                       \
+                                        "\"integrity\":"      \
+                                        "{"                   \
+                                            "\"crc16\":" "%d" \
+                                        "}"                   \
+                                    "}";
 
 static uint16_t telemetry_msg_crc16 = 0xFFFF;
 
@@ -143,20 +156,6 @@ static void evaluate(void) {
     total.fuel_rub += fuel_rub;
 }
 
-#if _USING_UART_PRESENT_CONFIG
-static void uart_present_conf(void) {
-    printf("*******************************************************\n");
-    printf("*                     SETTINGS                        *\n");
-    printf("*******************************************************\n\n");
-    printf("TIMER1_TICK_US=%f\n", TIMER1_TICK_US);
-    printf("TIMER2_TICKS_EQ_A_SECOND=%d\n", TIMER2_TICKS_EQ_A_SECOND);
-    printf("VOLUMETRIC_FLOW_MILLILITERS_IN_MINUTE=%f\n", VOLUMETRIC_FLOW_MILLILITERS_IN_MINUTE);
-    printf("INJECTORS=%d\n", INJECTORS);
-    printf("TICKS_PER_WHEEL_REVOLUTION=%d\n", TICKS_PER_WHEEL_REVOLUTION);
-    printf("METERS_PER_WHEEL_REVOLUTION=%d\n", METERS_PER_WHEEL_REVOLUTION);
-}
-#endif
-
 static void lprintf(int x, int y, const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
@@ -178,7 +177,7 @@ static void uart_send_telemetry(void) {
         telemetry_msg_crc16 = _crc16_update(telemetry_msg_crc16, (uint8_t)telemetry_msg[i]);
     }
 
-    printf(crc16_msg, telemetry_msg_crc16);
+    printf(integrity_msg, telemetry_msg_crc16);
 
     return ;
 }
@@ -224,21 +223,14 @@ static size_t eeprom_try_save(uint8_t* src, uint8_t* dst, size_t sz) {
         new_sz++;
     }
 
-    #else /* _USING_EEPROM_ECC */
-    
     if(!eeprom_is_ready())
         return 0;
     eeprom_write_block((const void *)src, (void *)dst, new_sz);
     
-    #endif /* _USING_EEPROM_ECC */
-
     return new_sz;
 }
 
 static void eeprom_load(uint8_t* src, uint8_t* dst, ecc_size_t sz) {
-    
-    #if _USING_EEPROM_ECC
-
     uint8_t parity = 0;
     uint8_t first = 0;
     uint8_t second = 0;
@@ -261,27 +253,16 @@ static void eeprom_load(uint8_t* src, uint8_t* dst, ecc_size_t sz) {
         *dst++ = second;
     }
     
-    #else /* _USING_EEPROM_ECC */
-    
     eeprom_busy_wait();
     eeprom_read_block((void *)dst, (const void *)src, sizeof(params_t));
-
-    #endif /* _USING_EEPROM_ECC */
 }
 
-#endif /* _USING_EEPROM */
 
 int main(void) {
     init();
 
-    #if _USING_UART_PRESENT_CONFIG
-    uart_present_conf();
-    #endif
-
-    #if _USING_EEPROM
     eeprom_load((uint8_t*)EEPROM_TOTAL_OFFSET, (uint8_t*)&total, ecc_sizeof(params_t));
     eeprom_load((uint8_t*)EEPROM_STATS_OFFSET, (uint8_t*)&stats, ecc_sizeof(stats_t));
-    #endif
 
     sei();
     while (1) {
@@ -289,10 +270,8 @@ int main(void) {
         wait(1);
         evaluate();
 
-        #if _USING_EEPROM
         eeprom_try_save((uint8_t*)&total, (uint8_t*)EEPROM_TOTAL_OFFSET, sizeof(params_t));
         eeprom_try_save((uint8_t*)&stats, (uint8_t*)EEPROM_STATS_OFFSET, sizeof(stats_t));
-        #endif
 
         uart_send_telemetry();
         lcd_present();

@@ -4,23 +4,23 @@
 #include <util/delay.h>
 
 // data port
-#define GLCD_DATA_PORT   PORTB
-#define GLCD_DATA_PIN    PIN0
-#define GLCD_DATA_DDR    DDRB
+#define GLCD_DATA_PORT   PORTD
+#define GLCD_DATA_PIN    PIND
+#define GLCD_DATA_DDR    DDRD
 // control port
-#define GLCD_CTRL_PORT   PORTC
-#define GLCD_CTRL_PIN    PIN0
-#define GLCD_CTRL_DDR    DDRC
+#define GLCD_CTRL_PORT   PORTB
+#define GLCD_CTRL_PIN    PINB
+#define GLCD_CTRL_DDR    DDRB
 // control signals
-#define GLCD_WR          PC0
-#define GLCD_RD          PC1
-#define GLCD_CE          PC2
-#define GLCD_CD          PC3
-#define GLCD_RESET       PC4
-#define GLCD_FS          PC5
+#define GLCD_WR          PB0
+#define GLCD_RD          PB1
+#define GLCD_CE          PB2
+#define GLCD_CD          PB3
+#define GLCD_RESET       PB4
+#define GLCD_FS          PB5
 // display properties
-#define GLCD_NUMBER_OF_LINES                64
-#define GLCD_PIXELS_PER_LINE                240
+#define GLCD_NUMBER_OF_LINES                128
+#define GLCD_PIXELS_PER_LINE                128
 #define GLCD_FONT_WIDTH                     8
 //
 #define GLCD_GRAPHIC_AREA                   (GLCD_PIXELS_PER_LINE / GLCD_FONT_WIDTH)
