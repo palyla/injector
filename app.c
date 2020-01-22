@@ -172,7 +172,8 @@ static void uart_send_telemetry(void) {
         current.engine_temp_c,
         current.airflow_temp_c
     );
-
+    
+    telemetry_msg_crc16 = 0xFFFF;
     for(register int i = 0; i < sizeof(telemetry_msg); i++) {
         telemetry_msg_crc16 = _crc16_update(telemetry_msg_crc16, (uint8_t)telemetry_msg[i]);
     }
