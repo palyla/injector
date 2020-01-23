@@ -13,7 +13,8 @@ FREERTOS_O = lib/FreeRTOS/FreeRTOS/Source/portable/GCC/ATMega256x/port.o \
 			 lib/FreeRTOS/FreeRTOS/Source/queue.o \
 			 lib/FreeRTOS/FreeRTOS/Source/stream_buffer.o \
 			 lib/FreeRTOS/FreeRTOS/Source/tasks.o \
-			 lib/FreeRTOS/FreeRTOS/Source/timers.o
+			 lib/FreeRTOS/FreeRTOS/Source/timers.o \
+			 lib/FreeRTOS/FreeRTOS/Source/portable/MemMang/heap_3.o
 
 LIBS_H = -Ilib -I./ \
 		 -Ilib/DL_Hamming \

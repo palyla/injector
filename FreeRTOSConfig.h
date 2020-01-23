@@ -60,7 +60,7 @@
 #define configUSE_QUEUE_SETS                0
 #define configQUEUE_REGISTRY_SIZE           0
 #define configUSE_TIME_SLICING              1
-#define configCHECK_FOR_STACK_OVERFLOW      1
+#define configCHECK_FOR_STACK_OVERFLOW      0
 #define configUSE_MALLOC_FAILED_HOOK        1
 
 #define configSUPPORT_DYNAMIC_ALLOCATION    1
@@ -70,7 +70,7 @@
 #define configUSE_TIMERS                    1
 #define configTIMER_TASK_PRIORITY           ( ( UBaseType_t ) 3 )
 #define configTIMER_QUEUE_LENGTH            ( ( UBaseType_t ) 10 )
-#define configTIMER_TASK_STACK_DEPTH        ( 85 )
+#define configTIMER_TASK_STACK_DEPTH        configMINIMAL_STACK_SIZE
 
 /* Co-routine definitions. */
 #define configUSE_CO_ROUTINES               0
