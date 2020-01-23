@@ -25,7 +25,7 @@ static const char* config_msg = "{"                                             
                                         "\"TICKS_PER_WHEEL_REVOLUTION\":"            "%f," \
                                         "\"METERS_PER_WHEEL_REVOLUTION\":"           "%f"  \
                                     "}"                                                    \
-                                "}";
+                                "}\n";
 
 
 static const char* telemetry_msg =  "{"                                 \
@@ -36,14 +36,14 @@ static const char* telemetry_msg =  "{"                                 \
                                             "\"engine_temp_c\":"  "%f," \
                                             "\"airflow_temp_c\":" "%f"  \
                                         "}"                             \
-                                    "}";
+                                    "}\n";
 
 static const char* integrity_msg =  "{"                       \
                                         "\"integrity\":"      \
                                         "{"                   \
                                             "\"crc16\":" "%d" \
                                         "}"                   \
-                                    "}";
+                                    "}\n";
 
 static uint16_t telemetry_msg_crc16 = 0xFFFF;
 
@@ -195,8 +195,6 @@ static void lcd_present(void) {
     lcd_render();
 }
 
-#if _USING_EEPROM
-
 static void ecc_error_handler(void) {
     while(1)
         printf("ECC failed, corections=%lld\n", ecc_corrections);
@@ -204,8 +202,6 @@ static void ecc_error_handler(void) {
 
 static size_t eeprom_try_save(uint8_t* src, uint8_t* dst, size_t sz) {
     size_t new_sz = sz;
-    
-    #if _USING_EEPROM_ECC
 
     uint8_t parity = 0;
     uint8_t first = 0;

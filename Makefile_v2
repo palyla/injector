@@ -1,0 +1,56 @@
+# DEVICE     = atmega328p
+DEVICE     = atmega2560
+CLOCK      = 16000000
+AVRDUDE = avrdude -C /etc/avrdude.conf -c arduino -P /dev/ttyUSB0 -b 57600 -D -p $(DEVICE)
+SIMAVR = simavr --freq $(CLOCK) --mcu $(DEVICE) 
+
+FREERTOS_H = -Ilib/FreeRTOS/FreeRTOS/Source/include \
+			 -Ilib/FreeRTOS/FreeRTOS/Source/portable/GCC/ATMega256x
+FREERTOS_O = lib/FreeRTOS/FreeRTOS/Source/portable/GCC/ATMega256x/port.o \
+			 lib/FreeRTOS/FreeRTOS/Source/croutine.o \
+			 lib/FreeRTOS/FreeRTOS/Source/event_groups.o \
+			 lib/FreeRTOS/FreeRTOS/Source/list.o \
+			 lib/FreeRTOS/FreeRTOS/Source/queue.o \
+			 lib/FreeRTOS/FreeRTOS/Source/stream_buffer.o \
+			 lib/FreeRTOS/FreeRTOS/Source/tasks.o \
+			 lib/FreeRTOS/FreeRTOS/Source/timers.o
+
+LIBS_H = -Ilib -I./ \
+		 -Ilib/DL_Hamming \
+		 -Ilib/lcd/T6963C
+LIB_O = lib/DL_Hamming/DL_Hamming.o \
+		 lib/DL_Hamming/DL_HammingCalculateParitySmall.o \
+		 lib/lcd/T6963C/T6963C.o
+
+OBJECTS = $(FREERTOS_O) $(LIB_O) io/lcd.o io/uart.o app.o
+COMPILE = avr-gcc -Wall -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE) -Llib -ffunction-sections -fdata-sections -Wl,--gc-sections,-u,vfprintf,-lprintf_flt -lm
+# COMPILE = avr-gcc -Wall -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE) -Llib -Wl,-u,vfprintf,-lprintf_flt -lm
+
+
+all:	app.hex
+
+.c.o:
+	$(COMPILE) $(FREERTOS_H) $(LIBS_H) -c $< -o $@
+
+.S.o:
+	$(COMPILE) -x assembler-with-cpp -c $< -o $@
+
+.c.s:
+	$(COMPILE) -S $< -o $@
+
+flash:	all
+	$(AVRDUDE) -U flash:w:app.hex:i
+
+test: all
+	$(SIMAVR) app.hex
+
+clean:
+	rm -f app.hex app.elf $(OBJECTS)
+
+app.elf: $(OBJECTS)
+	$(COMPILE) -o app.elf $(OBJECTS)
+
+app.hex: app.elf
+	rm -f app.hex
+	avr-objcopy -j .text -j .data -O ihex app.elf app.hex
+	avr-size --format=avr --mcu=$(DEVICE) app.elf
