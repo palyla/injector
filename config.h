@@ -3,6 +3,10 @@
 
 #include "types.h"
 
+#ifndef F_CPU
+#define F_CPU 16000000UL
+#endif
+
 
 /* Memory options */
 #define EEPROM_DATA_OFFSET   0x0

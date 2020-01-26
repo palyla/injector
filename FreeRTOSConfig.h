@@ -30,7 +30,6 @@
 
 #include <avr/io.h>
 
-#include "FreeRTOSBoardDefs.h"
 
 /*-----------------------------------------------------------
  * Application specific definitions.
@@ -103,6 +102,7 @@ to exclude the API function. */
 #define configMAX(a,b)  ({ __typeof__ (a) _a = (a); __typeof__ (b) _b = (b); _a > _b ? _a : _b; })
 #define configMIN(a,b)  ({ __typeof__ (a) _a = (a); __typeof__ (b) _b = (b); _a < _b ? _a : _b; })
 
+#include "FreeRTOSBoardDefs.h"
 
 
 #endif /* FREERTOS_CONFIG_H */

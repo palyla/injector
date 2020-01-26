@@ -2,22 +2,23 @@
 DEVICE     = atmega2560
 CLOCK      = 16000000
 AVRDUDE = avrdude -C /etc/avrdude.conf -c arduino -P /dev/ttyUSB0 -b 57600 -D -p $(DEVICE)
-SIMAVR = simavr --freq $(CLOCK) --mcu $(DEVICE) 
+SIMAVR = simavr --freq $(CLOCK) --mcu $(DEVICE) -v -v -v 
 
 FREERTOS_H = -Ilib/FreeRTOS/FreeRTOS/Source/include \
-			 -Ilib/FreeRTOS/FreeRTOS/Source/portable/GCC/ATmega
-			 
-FREERTOS_O = lib/FreeRTOS/FreeRTOS/Source/portable/GCC/ATmega/port.o \
+			 -Ilib/FreeRTOS/FreeRTOS/Source/portable/GCC/ATmega \
+			 -Iio
+
+FREERTOS_O = \
+			 lib/FreeRTOS/FreeRTOS/Source/portable/GCC/ATmega/port.o \
 			 lib/FreeRTOS/FreeRTOS/Source/portable/MemMang/heap_3.o \
-			 lib/FreeRTOS/FreeRTOS/Source/portable/GCC/ATmega/serial.o \
+			 lib/FreeRTOS/FreeRTOS/Source/portable/GCC/ATmega/hooks.o \
 			 lib/FreeRTOS/FreeRTOS/Source/croutine.o \
 			 lib/FreeRTOS/FreeRTOS/Source/event_groups.o \
 			 lib/FreeRTOS/FreeRTOS/Source/list.o \
 			 lib/FreeRTOS/FreeRTOS/Source/queue.o \
 			 lib/FreeRTOS/FreeRTOS/Source/stream_buffer.o \
 			 lib/FreeRTOS/FreeRTOS/Source/tasks.o \
-			 lib/FreeRTOS/FreeRTOS/Source/timers.o 
-			 #lib/FreeRTOS/FreeRTOS/Source/portable/GCC/ATmega/hooks.o \
+			 lib/FreeRTOS/FreeRTOS/Source/timers.o
 
 LIBS_H = -Ilib -I./ 
 # 		 -Ilib/DL_Hamming \
@@ -26,7 +27,7 @@ LIBS_H = -Ilib -I./
 # 		 lib/DL_Hamming/DL_HammingCalculateParitySmall.o \
 # 		 lib/lcd/T6963C/T6963C.o
 
-OBJECTS = $(FREERTOS_O) app_v2.o
+OBJECTS = $(FREERTOS_O) io/uart.o app_v2.o
 COMPILE = avr-gcc -Wall -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE) -Llib -ffunction-sections -fdata-sections -Wl,--gc-sections,-u,vfprintf,-lprintf_flt -lm
 # COMPILE = avr-gcc -Wall -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE) -Llib -Wl,-u,vfprintf,-lprintf_flt -lm
 
