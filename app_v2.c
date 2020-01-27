@@ -12,14 +12,25 @@
 
 #include "io/uart.h"
 
+#if defined _DEBUG_SERIAL_
+	#define fatal(fmt, ...) \
+	        do { fprintf(stdout, "%s:%d:%s(): " fmt, __FILE__, __LINE__, __func__, __VA_ARGS__); } while (1)
+#elif defined _DEBUG_DISPLAY_
+	#define fatal(fmt, ...)
+#else
+	#define fatal(fmt, ...)
+#endif
+
+#define _ERR_MSG_NO_HEAP "Insufficient FreeRTOS heap"
+
 #define TASK_DEFAULT_PRIORITY 255
 #define TASK_DEFAULT_STACK_SIZE 64
 #define TIMER_INTERVAL_MS 250
 
 TimerHandle_t xTimerInterval = NULL;
 
-TaskHandle_t xHandleMain = NULL;
-TaskHandle_t xHandleMain2 = NULL;
+TaskHandle_t xHandleTaskDisplay = NULL;
+TaskHandle_t xHandleTaskSerial = NULL;
 BaseType_t xReturned = NULL;
 
 
@@ -38,7 +49,7 @@ ISR(INT1_vect) { vInterruptInjector(); }
 
 void vTimerIntervalCallback(TimerHandle_t xTimer) {
 	vTiksReset();
-	
+
 	// TODO calculate parameters
 }
 
@@ -90,30 +101,41 @@ static void vInitOS(void) {
 	);
 
 	if(xTimerInterval == NULL) {
-		// TODO err
+	    fatal("xTimerInterval: " _ERR_MSG_NO_HEAP);
 	}
 
-    xReturned = xTaskCreate(vTaskMain, "vTaskMain", TASK_DEFAULT_STACK_SIZE, ( void * ) NULL, TASK_DEFAULT_PRIORITY, &xHandleMain);
-
-    xReturned = xTaskCreate(vTaskMain2, "vTaskMain2", TASK_DEFAULT_STACK_SIZE, ( void * ) NULL, TASK_DEFAULT_PRIORITY, &xHandleMain2);
-    if(xReturned == pdPASS)
-    {
-        //vTaskDelete(xHandle);
-    	
+    xReturned = xTaskCreate(
+    	vTaskDisplay, 
+    	"vTaskDisplay", 
+    	TASK_DEFAULT_STACK_SIZE, 
+    	(void *) NULL, 
+    	TASK_DEFAULT_PRIORITY, 
+    	&xHandleTaskDisplay
+    );
+    if(xReturned != pdPASS) {
+	    fatal("vTaskDisplay: " _ERR_MSG_NO_HEAP);
     }
-	
 
+    xReturned = xTaskCreate(
+    	vTaskSerial, 
+    	"vTaskSerial", 
+    	TASK_DEFAULT_STACK_SIZE, 
+    	(void *) NULL, 
+    	TASK_DEFAULT_PRIORITY, 
+    	&xHandleTaskSerial
+    );
+    if(xReturned != pdPASS) {
+	    fatal("vTaskSerial: " _ERR_MSG_NO_HEAP);
+    }
 }
 
-void vTaskMain(void * pvParameters)
-{
+void vTaskDisplay(void * pvParameters) {
     while(1) {
 	    printf("1\n");
     }
 }
 
-void vTaskMain2(void * pvParameters)
-{
+void vTaskSerial(void * pvParameters) {
     while(1) {
 	    printf("2\n");
     }
@@ -126,16 +148,13 @@ int main(void) {
 	vInitHW();
 	vInitOS();
 
-
 	xReturned = xTimerStart(xTimerInterval, 0);
 	if(xReturned != pdPASS) {
-		/* The timer could not be set into the Active
-		state. */
-		// TODO err
+	    fatal("xTimerInterval: " _ERR_MSG_NO_HEAP);
 	}
 	
 	vTaskStartScheduler();
     
-    while (1)
-    	;
+    /* We shouldn't be here */
+    fatal("Insufficient RAM");
 }
