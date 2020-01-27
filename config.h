@@ -7,7 +7,7 @@
 #define F_CPU 16000000UL
 #endif
 
-#define _DEBUG_SERIAL_
+#define _DEBUG_SERIAL
 
 /* Memory options */
 #define EEPROM_DATA_OFFSET   0x0

@@ -1,6 +1,7 @@
 #include "config.h"
 
 #include <stdio.h>
+#include <avr/interrupt.h>
 
 #include "FreeRTOS.h" /* Must come first. */
 #include "FreeRTOSConfig.h"
@@ -12,10 +13,9 @@
 
 #include "io/uart.h"
 
-#if defined _DEBUG_SERIAL_
-	#define fatal(fmt, ...) \
-	        do { fprintf(stdout, "%s:%d:%s(): " fmt, __FILE__, __LINE__, __func__, __VA_ARGS__); } while (1)
-#elif defined _DEBUG_DISPLAY_
+#if defined _DEBUG_SERIAL
+	#define fatal(fmt, ...) do { printf("%s:%d:%s(): " fmt, __FILE__, __LINE__, __func__, ##__VA_ARGS__); } while (1)
+#elif defined _DEBUG_DISPLAY
 	#define fatal(fmt, ...)
 #else
 	#define fatal(fmt, ...)
@@ -25,17 +25,22 @@
 
 #define TASK_DEFAULT_PRIORITY 255
 #define TASK_DEFAULT_STACK_SIZE 64
-#define TIMER_INTERVAL_MS 250
+// #define TIMER_INTERVAL_MS 250
+#define TIMER_INTERVAL_MS 100
 
+Params_t xParams;
+Stats_t xStats;
 TimerHandle_t xTimerInterval = NULL;
-
 TaskHandle_t xHandleTaskDisplay = NULL;
 TaskHandle_t xHandleTaskSerial = NULL;
-BaseType_t xReturned = NULL;
+BaseType_t xReturned;
 
 
 static inline void vInterruptInjector(void);
 static inline void vInterruptWheel(void);
+void vTaskDisplay(void * pvParameters);
+void vTaskSerial(void * pvParameters);
+static void vTiksReset(void);
 
 
 /* 1 tick == 64 micros */
@@ -48,7 +53,12 @@ ISR(INT1_vect) { vInterruptInjector(); }
 
 
 void vTimerIntervalCallback(TimerHandle_t xTimer) {
+	uint64_t ullTicksInjectorCopy = ullTicksInjector;
+	uint64_t ullTicksWheelCopy = ullTicksWheel;
+
 	vTiksReset();
+
+    printf("Pong\n");
 
 	// TODO calculate parameters
 }
@@ -131,13 +141,13 @@ static void vInitOS(void) {
 
 void vTaskDisplay(void * pvParameters) {
     while(1) {
-	    printf("1\n");
+	    // printf("1\n");
     }
 }
 
 void vTaskSerial(void * pvParameters) {
     while(1) {
-	    printf("2\n");
+	    // printf("2\n");
     }
 }
 
