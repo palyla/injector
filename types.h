@@ -29,5 +29,7 @@ typedef struct {
     time_t pit; 		/* Point in time */
 } stats_t;
 
+/* incremental type */
+/* re-calculate type */
 
 #endif /* __INJECTOR_TYPES_H__ */
