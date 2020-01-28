@@ -24,12 +24,43 @@
 #define _ERR_MSG_NO_HEAP "Insufficient FreeRTOS heap"
 
 #define TASK_DEFAULT_PRIORITY 255
-#define TASK_DEFAULT_STACK_SIZE 64
+#define TASK_DEFAULT_STACK_SIZE 256
 // #define TIMER_INTERVAL_MS 250
-#define TIMER_INTERVAL_MS 100
+#define TIMER_INTERVAL_MS 1000
 
-Params_t xParams;
-Stats_t xStats;
+
+static const char* data_msg =  "{"                                    \
+                                   "\"params_t\":"                    \
+                                   "{"                                \
+                                       "\"fPathKm\":"          "%f,"  \
+                                       "\"fFuelLit\":"         "%f,"  \
+                                       "\"fFuelRub\":"         "%f,"  \
+                                       "\"fAirflowCel\":"      "%f,"  \
+                                       "\"fEngineCel\":"       "%f,"  \
+                                       "\"fSpeedKmPerHr\":"    "%f,"  \
+                                       "\"fFuelLitPerHr\":"    "%f,"  \
+                                       "\"fFuelRubPerHr\":"    "%f,"  \
+                                       "\"fFuelLitPer100Km\":" "%f,"  \
+                                       "\"uEngineRpm\":"  	   "%d"   \
+                                   "},"                               \
+                                   "\"stats_t\":"                     \
+                                   "{"                                \
+                                       "\"fFuelLastWeekLit\":"  "%f," \
+                                       "\"fFuelLastMonthLit\":" "%f," \
+                                       "\"xPit\":" "\"%s\""           \
+                                   "}"                                \
+                               "}\n";
+
+static const char* integrity_msg =  "{"                         \
+                                        "\"integrity\":"        \
+                                        "{"                     \
+                                            "\"crc16\":" "0x%x" \
+                                        "}"                     \
+                                    "}\n";
+
+
+params_t xParams;
+stats_t xStats;
 TimerHandle_t xTimerInterval = NULL;
 TaskHandle_t xHandleTaskDisplay = NULL;
 TaskHandle_t xHandleTaskSerial = NULL;
@@ -52,15 +83,53 @@ ISR(INT0_vect) { vInterruptWheel(); }
 ISR(INT1_vect) { vInterruptInjector(); }
 
 
+
+static void vEvaluate(void) {
+    float fPassPathM = 0.0;
+    float fPassPathKm = 0.0;
+    float fPassFuelMl = 0.0;
+    float fPassFuelLit = 0.0;
+    float fPassFuelRub = 0.0;
+    float fElapsedM = 0.0; /* The sum of durations while an injector in open state [Minutes] */
+
+    fElapsedM = ((float)ullTicksInjector * TIMER1_TICK_US / (1000.0 * 1000.0 * 60.0)) * INJECTORS;
+    fPassFuelMl = (fElapsedM * VOLUMETRIC_FLOW_MILLILITERS_IN_MINUTE);
+
+    fPassFuelLit = fPassFuelMl / 1000.0;
+    fPassFuelRub = fPassFuelLit * FUEL_COST_RUB_L;
+
+	xParams.fFuelLitPerHr = fPassFuelMl * 3.6;
+	xParams.fFuelRubPerHr = xParams.fFuelLitPerHr * FUEL_COST_RUB_L;
+
+    if (ullTicksWheel > TICKS_PER_WHEEL_REVOLUTION) {
+        fPassPathM = ((ullTicksWheel / TICKS_PER_WHEEL_REVOLUTION) * METERS_PER_WHEEL_REVOLUTION);
+        fPassPathKm = fPassPathM / 1000.0;
+
+		xParams.fPathKm += fPassPathKm;
+		xParams.fFuelLitPer100Km = (fPassFuelLit * 1000.0) / fPassPathM;
+		xParams.fSpeedKmPerHr = fPassPathKm * 0.000278;
+    } else {
+    	xParams.fFuelLitPer100Km = 0.0;
+		xParams.fSpeedKmPerHr = 0.0;
+    }
+
+    xParams.fFuelLit += fPassFuelLit;
+	xParams.fFuelRub += fPassFuelRub;
+    xParams.fAirflowCel = 0.0;
+	xParams.fEngineCel = 0.0;
+	xParams.uEngineRpm = 0.0;
+}
+
+
 void vTimerIntervalCallback(TimerHandle_t xTimer) {
 	uint64_t ullTicksInjectorCopy = ullTicksInjector;
 	uint64_t ullTicksWheelCopy = ullTicksWheel;
 
 	vTiksReset();
 
-    printf("Pong\n");
-
-	// TODO calculate parameters
+	/* critical start */
+	vEvaluate();
+	/* critical end */
 }
 
 
@@ -147,7 +216,22 @@ void vTaskDisplay(void * pvParameters) {
 
 void vTaskSerial(void * pvParameters) {
     while(1) {
-	    // printf("2\n");
+	    printf(
+	    	data_msg,
+	    	xParams.fPathKm,
+	    	xParams.fFuelLit,
+	    	xParams.fFuelRub,
+	    	xParams.fAirflowCel,
+	    	xParams.fEngineCel,
+	    	xParams.fSpeedKmPerHr,
+	    	xParams.fFuelLitPerHr,
+	    	xParams.fFuelRubPerHr,
+	    	xParams.fFuelLitPer100Km,
+	    	xParams.uEngineRpm,
+	    	xStats.fFuelLastWeekLit,
+	    	xStats.fFuelLastMonthLit,
+	    	"xPit"
+	    );
     }
 }
 

@@ -18,13 +18,14 @@ typedef struct {
     float    fFuelRubPerHr;    /* Forecast fuel consumption [Rubles\Hour] */
     float    fFuelLitPer100Km; /* Forecast fuel consumption [Liter\100 Km] */
     uint16_t uEngineRpm;       /* Forecast engine rpms [Rpm] */
-} Params_t;
+} params_t;
 
 typedef struct {
+    /* total params */
     float fFuelLastWeekLit;  /* Spent fuel over the last week */
     float fFuelLastMonthLit; /* Spent fuel over the last month */
     time_t xPit; 		     /* Point in time */
-} Stats_t;
+} stats_t;
 
 /* incremental type */
 /* re-calculate type */

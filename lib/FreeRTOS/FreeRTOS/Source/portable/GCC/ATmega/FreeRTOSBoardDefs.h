@@ -81,9 +81,9 @@ extern "C" {
                                 WDTO_500MS
 */
 
-//  #define portUSE_TIMER0                                          // portUSE_TIMER0 to use 8 bit Timer0 for xTaskIncrementTick
+ #define portUSE_TIMER0                                          // portUSE_TIMER0 to use 8 bit Timer0 for xTaskIncrementTick
 //  #define portUSE_TIMER1                                          // portUSE_TIMER1 to use 16 bit Timer1 for xTaskIncrementTick
-    #define portUSE_TIMER2                                          // portUSE_TIMER2 to use 8 bit Timer2 using 32,768Hz for xTaskIncrementTick
+    // #define portUSE_TIMER2                                          // portUSE_TIMER2 to use 8 bit Timer2 using 32,768Hz for xTaskIncrementTick
 //  #define portUSE_TIMER3                                          // portUSE_TIMER3 to use 16 bit Timer3 for xTaskIncrementTick
 
 // Use Timer 2 for a Real Time Clock, if you have a 32kHz watch crystal attached.
@@ -164,9 +164,9 @@ extern "C" {
 
     */
 
-//  #define portUSE_TIMER0                          // portUSE_TIMER0 to use 8 bit Timer0 for xTaskIncrementTick
+ #define portUSE_TIMER0                          // portUSE_TIMER0 to use 8 bit Timer0 for xTaskIncrementTick
 //  #define portUSE_TIMER1                          // portUSE_TIMER1 to use 16 bit Timer1 for xTaskIncrementTick
-    #define portUSE_TIMER2                          // portUSE_TIMER2 to use 8 bit Timer2 using 32,768Hz for xTaskIncrementTick
+    // #define portUSE_TIMER2                          // portUSE_TIMER2 to use 8 bit Timer2 using 32,768Hz for xTaskIncrementTick
 //  #define portUSE_TIMER3                          // portUSE_TIMER3 to use 16 bit Timer3 for xTaskIncrementTick
 
 // Use Timer 2 for a Real Time Clock, if you have a 32kHz watch crystal attached.
