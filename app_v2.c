@@ -1,6 +1,7 @@
 #include "config.h"
 
 #include <stdio.h>
+#include <stdbool.h>
 #include <avr/interrupt.h>
 
 #include "FreeRTOS.h" /* Must come first. */
@@ -11,10 +12,11 @@
 #include "timers.h"   /* Software timer related API prototypes. */
 #include "semphr.h"   /* Semaphore related API prototypes. */
 
-#include "io/uart.h"
+#include "serial.h"
 
+#define printk(...) do { if(bIsOsInitialized) xSerialPrintf(__VA_ARGS__); else avrSerialPrintf(__VA_ARGS__); } while (0)
 #if defined _DEBUG_SERIAL
-    #define fatal(fmt, ...) do { printf("%s:%d:%s(): " fmt, __FILE__, __LINE__, __func__, ##__VA_ARGS__); } while (1)
+    #define fatal(fmt, ...) do { printk("%s:%d:%s(): " fmt "\n", __FILE__, __LINE__, __func__, ##__VA_ARGS__); } while (1)
 #elif defined _DEBUG_DISPLAY
     #define fatal(fmt, ...)
 #else
@@ -30,6 +32,7 @@
 #define TIMER_INTERVAL_MS 1000
 #define MUTEX_WAIT_TICKS 10
 
+extern xComPortHandle xSerialPort;
 
 static const char* data_msg =  "{"                                    \
                                    "\"params_t\":"                    \
@@ -59,7 +62,13 @@ static const char* integrity_msg =  "{"                         \
                                             "\"crc16\":" "0x%x" \
                                         "}"                     \
                                     "}\n";
+// xSerialPrintf_P(PSTR("\r\nMessage %u %u %u"), var1, var2, var2);
 
+static bool bIsOsInitialized = false;
+static bool bIsDataUpdated = false;
+/* 1 tick == 64 micros */
+static volatile uint64_t ullTicksInjector = 0;
+static volatile uint64_t ullTicksWheel = 0;
 
 
 TimerHandle_t xTimerInterval = NULL;
@@ -68,9 +77,7 @@ TaskHandle_t xHandleTaskSerial = NULL;
 SemaphoreHandle_t xSemData;
 
 params_t xParams;
-params_t xParamsCopy;
 stats_t xStats;
-stats_t xStatsCopy;
 
 
 static inline void vInterruptInjector(void);
@@ -80,15 +87,17 @@ void vTaskSerial(void * pvParameters);
 static void vTiksReset(void);
 
 
-/* 1 tick == 64 micros */
-static volatile uint64_t ullTicksInjector = 0;
-static volatile uint64_t ullTicksWheel = 0;
-
 
 ISR(INT0_vect) { vInterruptWheel(); }
 ISR(INT1_vect) { vInterruptInjector(); }
 
 
+void vYieldTake(SemaphoreHandle_t xSem) {
+	BaseType_t xReturned;
+
+    while(pdTRUE != xSemaphoreTake(xSemData, (TickType_t) MUTEX_WAIT_TICKS))
+        taskYIELD();
+}
 
 static void vEvaluate(void) {
     BaseType_t xReturned;
@@ -99,9 +108,8 @@ static void vEvaluate(void) {
     float fPassFuelRub = 0.0;
     float fElapsedM = 0.0; /* The sum of durations while an injector in open state [Minutes] */
 
-    xReturned = xSemaphoreTake(xSemData, (TickType_t) MUTEX_WAIT_TICKS);
-    if(xReturned != pdTRUE)
-        taskYIELD();
+    /* WARNING: The time we'll spend here souldn't be greater then TIMER_INTERVAL_MS */
+	vYieldTake(xSemData);
 
     fElapsedM = ((float)ullTicksInjector * TIMER1_TICK_US / (1000.0 * 1000.0 * 60.0)) * INJECTORS;
     fPassFuelMl = (fElapsedM * VOLUMETRIC_FLOW_MILLILITERS_IN_MINUTE);
@@ -191,7 +199,8 @@ static void vInitInterruptWheel(void) {
 }
 
 static void vInitHW(void) {
-    vInitUART();
+    xSerialPort = xSerialPortInitMinimal(USART0, 115200, (uint16_t) 2048, (uint16_t) 0);
+
     // lcd_init();
     vInitInterruptInjector();
     vInitInterruptWheel();
@@ -245,47 +254,57 @@ static void vInitOS(void) {
     if(xReturned != pdPASS) {
         fatal("xTimerInterval: " _ERR_MSG_NO_HEAP);
     }
+    printk("BLA_BEFORE\n");
+    bIsOsInitialized = true;
+    printk("BLA_AFTER\n");
 }
+
 
 void vTaskDisplay(void * pvParameters) {
-    while(1) {
-        // printf("1\n");
-    }
-}
-
-void vTaskSerial(void * pvParameters) {
-    BaseType_t xReturned;
+	BaseType_t xReturned;
 
     while(1) {
-        xReturned = xSemaphoreTake(xSemData, (TickType_t) MUTEX_WAIT_TICKS);
-        if(xReturned != pdTRUE)
-            taskYIELD();
-        
-        xParamsCopy = xParams;
-        xStatsCopy = xStats;
+		vYieldTake(xSemData);
+
+
+
 
         xReturned = xSemaphoreGive(xSemData);
         if(xReturned == pdFALSE) {
             fatal("xSemData:xSemaphoreGive: " _ERR_MSG_QUEUE_FULL);
         }
 
-        printf(
+
+    }
+}
+
+void vTaskSerial(void * pvParameters) {
+	BaseType_t xReturned;
+
+    while(1) {
+		vYieldTake(xSemData);
+
+        printk(
             data_msg,
-            xParamsCopy.fPathKm,
-            xParamsCopy.fFuelLit,
-            xParamsCopy.fFuelRub,
-            xParamsCopy.fAirflowCel,
-            xParamsCopy.fEngineCel,
-            xParamsCopy.fSpeedKmPerHr,
-            xParamsCopy.fFuelLitPerHr,
-            xParamsCopy.fFuelRubPerHr,
-            xParamsCopy.fFuelLitPer100Km,
-            xParamsCopy.uEngineRpm,
-            xStatsCopy.fFuelLastWeekLit,
-            xStatsCopy.fFuelLastMonthLit,
+            xParams.fPathKm,
+            xParams.fFuelLit,
+            xParams.fFuelRub,
+            xParams.fAirflowCel,
+            xParams.fEngineCel,
+            xParams.fSpeedKmPerHr,
+            xParams.fFuelLitPerHr,
+            xParams.fFuelRubPerHr,
+            xParams.fFuelLitPer100Km,
+            xParams.uEngineRpm,
+            xStats.fFuelLastWeekLit,
+            xStats.fFuelLastMonthLit,
             "xPit"
         );
 
+        xReturned = xSemaphoreGive(xSemData);
+        if(xReturned == pdFALSE) {
+            fatal("xSemData:xSemaphoreGive: " _ERR_MSG_QUEUE_FULL);
+        }
     }
 }
 
