@@ -132,7 +132,7 @@ static void vEvaluate(void) {
 
     xReturned = xSemaphoreGive(xSemData);
     if(xReturned == pdFALSE) {
-        fatal("xSemData:xSemaphoreGive: " _ERR_MSG_QUEUE_FULL)
+        fatal("xSemData:xSemaphoreGive: " _ERR_MSG_QUEUE_FULL);
     }
 }
 
@@ -152,7 +152,8 @@ void vTimerIntervalCallback(TimerHandle_t xTimer) {
 
 
 static inline void vInterruptInjector(void) {
-    taskENTER_CRITICAL_FROM_ISR();
+	UBaseType_t uxSavedInterruptStatus;
+    uxSavedInterruptStatus = taskENTER_CRITICAL_FROM_ISR();
 
     if (PIND & (1 << PD3)) {
         /* Prescaler 1024 and 16MHZ frequncy [64 micros ... 4.19424 secs] */
@@ -162,15 +163,16 @@ static inline void vInterruptInjector(void) {
         TCNT1 = 0x0;
         TCCR1B = 0x0;
     }
-    taskEXIT_CRITICAL_FROM_ISR();
+    taskEXIT_CRITICAL_FROM_ISR(uxSavedInterruptStatus);
 }
 
 static inline void vInterruptWheel(void) {
-    taskENTER_CRITICAL_FROM_ISR();
+	UBaseType_t uxSavedInterruptStatus;
+	uxSavedInterruptStatus = taskENTER_CRITICAL_FROM_ISR();
 
     ullTicksWheel += 1;
     
-    taskEXIT_CRITICAL_FROM_ISR();
+    taskEXIT_CRITICAL_FROM_ISR(uxSavedInterruptStatus);
 }
 
 static void vTiksReset(void) {
@@ -264,7 +266,7 @@ void vTaskSerial(void * pvParameters) {
 
         xReturned = xSemaphoreGive(xSemData);
         if(xReturned == pdFALSE) {
-            fatal("xSemData:xSemaphoreGive: " _ERR_MSG_QUEUE_FULL)
+            fatal("xSemData:xSemaphoreGive: " _ERR_MSG_QUEUE_FULL);
         }
 
         printf(
